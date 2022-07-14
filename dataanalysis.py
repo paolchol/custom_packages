@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 import matplotlib as plt
 
+# %% Outlier detection and rejection
+
 class CheckOutliers():
     
     def __init__(self, df):
@@ -28,27 +30,28 @@ class CheckOutliers():
             self.output['n_outlier'][i] = sum(df[column] > upper_limit) + sum(df[column] > upper_limit)
             self.output['perc_outlier'][i] = ((sum(df[column] > upper_limit) + sum(df[column] < lower_limit))/len(df[column]))*100
     
-    def plot(self):
-        plt.pyplot.plot(self.output['ID'], self.output['n_outlier'])
-        plt.pyplot.plot(self.output['ID'], self.output['perc_outlier'])
-        
+    def plot(self, tag = 'perc_outlier'):
+        plt.pyplot.plot(self.output['ID'], self.output[tag])
+                
         #to be improved. example: subplots
         #reduce the size of the x labels
+    
+    def remove(self, fill = np.nan):
+        output = self.df.copy()
+        for column in self.df.columns:
+            Q1 = np.nanpercentile(self.df[column], 25)
+            Q3 = np.nanpercentile(self.df[column], 75)
+            IQR = Q3 - Q1
+            upper_limit = Q3 + 1.5*IQR
+            lower_limit = Q1 - 1.5*IQR
+            output.loc[self.df[column] > upper_limit, column] = fill
+            output.loc[self.df[column] < lower_limit, column] = fill
+            
+            #add a method to return the "positions" of the outliers,
+            #the index basically, and their values
+        return output
 
-def remove_outliers(df, fill = np.nan):
-    for column in df.columns:
-        Q1 = np.nanpercentile(df[column], 25)
-        Q3 = np.nanpercentile(df[column], 75)
-        IQR = Q3 - Q1
-        upper_limit = Q3 + 1.5*IQR
-        lower_limit = Q1 - 1.5*IQR
-        df.loc[df[column] > upper_limit,column] = fill
-        df.loc[df[column] < lower_limit,column] = fill
-        
-        #add a method to return the "positions" of the outliers,
-        #the index basically, and their values
-        
-    return df
+# %% Missing data detection
 
 class CheckNA():
     
@@ -85,3 +88,13 @@ class CheckNA():
             else:
                 NAs.iloc[i,1] = False
         return self.filtered, NAs
+
+# %% General operations
+
+def print_row(df, row, cond = True):
+    for col in df.columns:
+        if cond:
+            print(f'{col}: {df.loc[row, col].values[0]}')
+        else:
+            # print(f'{np.where(df.columns == col)[0][0]}')
+            print(f'{col}: {df.iloc[row, np.where(df.columns == col)[0][0]]}')
