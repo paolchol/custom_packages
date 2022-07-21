@@ -23,7 +23,9 @@ meta = pd.read_csv('data/metadata_piezometri_ISS.csv')
 
 cn = da.CheckNA(head)
 filtered, removed = cn.filter_col(20, True)
-head_fill = filtered.interpolate('linear', limit = 12)
+co = da.CheckOutliers(filtered, False)
+head_clean = co.remove(skip = ['PO0120750R2020'])
+head_fill = head_clean.interpolate('linear', limit = 14)
 
 # %% Compute the SGI for each well/piezometer
 
@@ -33,7 +35,7 @@ for col in head_fill.columns:
     idx = np.invert(head_fill[col].isna())
     sgi_db.loc[idx, col] = ps.stats.sgi(head_fill[col].dropna())
 
-# sgi_db.to_csv('analisi_serie_storiche/SGI_db.csv')
+sgi_db.to_csv('analisi_serie_storiche/res_SGI.csv')
 
 # %% Visualize the SGI
 

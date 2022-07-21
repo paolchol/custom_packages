@@ -13,8 +13,11 @@ for(col in names(head)[-1]){
   head_fill[, col][idx:nrow(head)] = na.approx(head[, col][idx:nrow(head)], maxgap = 12)
 }
 
+idx <- (head_fill['DATA'] >= '2009-01-01') & (head_fill['DATA'] <= '2019-12-31')
+head_fill2009 <- head_fill[idx, ]
+
 #Mann-Kendall
-mk_db <- as.data.frame(array(dim = c(length(names(head_fill)[-1]), 2)))
+mk_db <- as.data.frame(array(dim = c(length(names(head_fill)[-1]), 3)))
 names(mk_db) <- c("p_value", "z", "S")
 rownames(mk_db) <- names(head_fill)[-1]
 

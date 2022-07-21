@@ -7,6 +7,7 @@ Mann-Kendall test and Sen's slope analysis on the head observations
 
 # %% Setup
 
+import pastas as ps
 import pandas as pd
 import numpy as np
 import dataanalysis as da
@@ -21,14 +22,20 @@ meta = pd.read_csv('data/metadata_piezometri_ISS.csv')
 # %% Select solid time series and fill missing values
 
 cn = da.CheckNA(head)
-filtered, removed = cn.filter_col(20, True)
+filtered, _ = cn.filter_col(20, True)
 co = da.CheckOutliers(filtered, False)
-head_clean = co.remove(skip = ['PO0120750R2020'])
+head_clean = co.remove()
 head_fill = head_clean.interpolate('linear', limit = 14)
 
 # %% Perform the Mann-Kendall test and calculate the Sen's slope
 
 confidence = 0.95
+
+#To compare with the PTUA2022 results and check that the algorithms
+#are working fine, cut the series between 2009 and 2019
+head_fill.index = pd.DatetimeIndex(head_fill.index)
+idx = head_fill.index.isin(pd.DatetimeIndex(pd.date_range('2009-01-01', '2019-12-31')))
+head_fill = head_fill.loc[idx, :]
 
 db_mk = pd.DataFrame(np.zeros((len(head_fill.columns), 3)), columns = ['z','p','tr'], index = head_fill.columns)
 db_slope = pd.DataFrame(np.zeros((len(head_fill.columns), 1)), columns = ['slope'], index = head_fill.columns)
@@ -38,44 +45,13 @@ for col in head_fill.columns:
     db_mk.loc[idx, 'z'], db_mk.loc[idx, 'p'], db_mk.loc[idx, 'tr'] = da.mann_kendall(head_fill[col].dropna(), confidence)
     db_slope[db_slope.index.isin([col])], _, _, _ = da.sen_slope(head_fill[col].dropna())
 
-db_mk.to_csv('analisi_serie_storiche/res_MK.csv')
-db_slope.to_csv('analisi_serie_storiche/res_sslope.csv')
+#Compare with the results from PTUA 2022
+meta = pd.read_csv('data/metadata_piezometri.csv', index_col = 'CODICE')
+join = pd.merge(db_slope, meta.loc[:, ['SENSSLOPE_M_MESE', 'STATISTICA_MK', 'PVALUE']], left_index = True, right_index = True)
+join = pd.merge(join, db_mk, left_index = True, right_index = True)
 
-# %% Calculate a 5-year step Sen's slope
-
-#check the length of the series
-#if it is longer than 5-year
-
-def step_sslope(df, step, dropna = True):
-    """
-    Parameters
-    ----------
-    df : pandas.DataFrame
-    step : int
-        step in which compute the sen's slope each
-        time. needs to be in the unit of the df index
-    dropna : boolean
-        remove the na from the columns passed to the sen's slope
-        function
-    """
-    ncol = round(len(df.index)/step)
-    db_slope = pd.DataFrame(np.zeros((len(df.columns), ncol)),
-                            columns = [f'slope{i}' for i in range(1, ncol+1)],
-                            index = df.columns)
-    for col in df.columns:
-        series = df[col].dropna() if dropna else df[col]
-        # if len(series) >= 2*step:
-        start, end = 0, 0
-        for n in range(round(len(series)/step)):
-            end = step*(n+1) if step*(n+1) < len(series) else len(series)
-            db_slope.loc[db_slope.index.isin([col]), f'slope{n+1}'], _, _, _ = da.sen_slope(series[start:end])
-            start = end
-    return db_slope
-
-db = step_sslope(head_fill, 5*12)
-
-# %% Visualize the slope overlayed to 
-
+#The Mann-Kendall results present the same signs but values of the statistic
+#differ. The Sen's slope values are instead pretty similar.
 
 # %% Compare two methods of sen's slope computation
 
