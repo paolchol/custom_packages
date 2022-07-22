@@ -31,50 +31,40 @@ head_fill = head_clean.interpolate('linear', limit = 14)
 confidence = 0.95
 
 db_mk = pd.DataFrame(np.zeros((len(head_fill.columns), 3)), columns = ['z','p','tr'], index = head_fill.columns)
-db_slope = pd.DataFrame(np.zeros((len(head_fill.columns), 1)), columns = ['slope'], index = head_fill.columns)
+db_slope = pd.DataFrame(np.zeros((len(head_fill.columns), 2)), columns = ['slope', 'intercept'], index = head_fill.columns)
 
 for col in head_fill.columns:
     idx = db_mk.index.isin([col])
     db_mk.loc[idx, 'z'], db_mk.loc[idx, 'p'], db_mk.loc[idx, 'tr'] = da.mann_kendall(head_fill[col].dropna(), confidence)
-    db_slope[db_slope.index.isin([col])], _, _, _ = da.sen_slope(head_fill[col].dropna())
+    db_slope.loc[col, :][0], db_slope.loc[col, :][1], _, _ = da.sen_slope(head_fill[col].dropna())
 
 db_mk.to_csv('analisi_serie_storiche/res_MK.csv')
 db_slope.to_csv('analisi_serie_storiche/res_sslope.csv')
 
-# %% Calculate a 5-year step Sen's slope
+# %% Calculate a 5-year step Mann-Kendall/Sen's slope
 
-#check the length of the series
-#if it is longer than 5-year
+step = 5*12 #5 years * 12 months/year
+confidence = 0.95
+db_stepmk = da.step_trend(head_fill, step, 'mk', confidence = confidence)
+db_stepss = da.step_trend(head_fill, step)
 
-def step_sslope(df, step, dropna = True):
-    """
-    Parameters
-    ----------
-    df : pandas.DataFrame
-    step : int
-        step in which compute the sen's slope each
-        time. needs to be in the unit of the df index
-    dropna : boolean
-        remove the na from the columns passed to the sen's slope
-        function
-    """
-    ncol = round(len(df.index)/step)
-    db_slope = pd.DataFrame(np.zeros((len(df.columns), ncol)),
-                            columns = [f'slope{i}' for i in range(1, ncol+1)],
-                            index = df.columns)
-    for col in df.columns:
-        series = df[col].dropna() if dropna else df[col]
-        # if len(series) >= 2*step:
-        start, end = 0, 0
-        for n in range(round(len(series)/step)):
-            end = step*(n+1) if step*(n+1) < len(series) else len(series)
-            db_slope.loc[db_slope.index.isin([col]), f'slope{n+1}'], _, _, _ = da.sen_slope(series[start:end])
-            start = end
-    return db_slope
+#Visualize a heatmap showing the variation of the sen's slope
+fig, ax = plt.subplots(figsize = (6.4, 3.6), dpi = 500)
+dv.heatmap_TS(db_stepss, db_stepss.index, db_stepss.columns, step = 1,
+               ax = ax, cbarlabel = "Sen's slope (5 year step)",
+              rotate = True, aspect = 'auto',
+              cmap = plt.get_cmap("viridis_r", 8),
+              title = "Sen's slope computed for 5-year steps")
+fig.tight_layout()
+plt.show()
 
-db = step_sslope(head_fill, 5*12)
+# %% Visualize the slope overlayed to the time series
 
-# %% Visualize the slope overlayed to 
+for piezo in db_slope.index:
+    dv.plot_sen(head_fill, piezo, db_slope)
+
+# %% Obtain the Sen's slope as a % of the water table
+
 
 
 # %% Compare two methods of sen's slope computation

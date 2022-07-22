@@ -5,6 +5,7 @@ Collection of custom functions for data visualization
 author: paolo
 """
 
+import pandas as pd
 from matplotlib import pyplot
 import plotly.express as px
 from plotly.offline import plot
@@ -31,6 +32,8 @@ def interactive_TS_visualization(df, xlab = 'X', ylab = 'Y', file = 'temp.html')
 def fast_boxplot(df):
     df.boxplot()
 
+# %% Plot SGI
+
 def plot_SGI(series, figsize = (6.4, 3.6), dpi = 500, dropna = True):    
     sgi = series.dropna() if dropna else series
     fig, ax = plt.subplots(figsize = figsize, dpi = dpi)
@@ -41,7 +44,7 @@ def plot_SGI(series, figsize = (6.4, 3.6), dpi = 500, dropna = True):
     ax.fill_between(sgi.index, 0, droughts, color = "C0")
     ax.set_title(series.name)
 
-def heatmap_TS(data, row_labels, col_labels, step, ax = None,
+def heatmap_TS(data, row_labels, col_labels, step, ax = None, title = None,
             cbar_kw = {}, cbarlabel = "", white = False, rotate = False,
             labelsize = 8, **kwargs):
     """
@@ -83,7 +86,6 @@ def heatmap_TS(data, row_labels, col_labels, step, ax = None,
     # Let the horizontal axes labeling appear on top.
     # ax.tick_params(top = True, bottom = False,
     #                labeltop = True, labelbottom = False)
-
     # Rotate the tick labels and set their alignment.
     if rotate:
         plt.setp(ax.get_xticklabels(), rotation = 30, ha = "right",
@@ -97,4 +99,18 @@ def heatmap_TS(data, row_labels, col_labels, step, ax = None,
         ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
         ax.tick_params(which="minor", bottom=False, left=False)
     
+    if title:
+        ax.set_title(title)
+    
     return im, cbar
+
+# %% Plot Sen's slope
+
+def plot_sen(df, piezo, db_slope, step = 12, figsize = (6.4, 3.6), dpi = 500):
+    fig, ax = plt.subplots(figsize = figsize, dpi = dpi)
+    ax.plot(df[piezo].dropna())
+    ax.plot(df[piezo].dropna().index, db_slope.loc[piezo, 'intercept'] + db_slope.loc[piezo, 'slope'] * np.array([i for i in range(len(df[piezo].dropna().index))]), 'r-')
+    ax.set_xticks(np.arange(0, len(df[piezo].dropna()), step), labels = [df.index[i] for i in np.arange(0, len(df[piezo].dropna()), step)])
+    ax.set_title(piezo)
+    plt.setp(ax.get_xticklabels(), rotation = 30, ha = "right",
+    rotation_mode = "anchor")

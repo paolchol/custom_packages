@@ -179,6 +179,39 @@ def sen_slope(vals, confidence = 0.95, scipy = True):
     slope = np.median(boxlist)
     return slope, k, se
 
+def step_trend(df, step, output = 'ss', dropna = True, **kwargs):
+    """
+    Parameters
+    ----------
+    df : pandas.DataFrame
+    step : int
+        step in which compute the sen's slope each
+        time. needs to be in the unit of the df index
+    stat : str
+        ss: Sen's slope
+        mk: Mann-Kendall test
+    dropna : boolean
+        remove the na from the columns passed to the sen's slope
+        function
+    """
+    ncol = round(len(df.index)/step)
+    db = pd.DataFrame(np.zeros((len(df.columns), ncol)),
+                            columns = [f'{output}{i}' for i in range(1, ncol+1)],
+                            index = df.columns)
+    db[:] = np.nan
+    for col in df.columns:
+        series = df[col].dropna() if dropna else df[col]
+        # if len(series) >= 2*step:
+        start, end = 0, 0
+        for n in range(round(len(series)/step)):
+            end = step*(n+1) if step*(n+1) < len(series) else len(series)
+            if output == 'ss':
+                db.loc[db.index.isin([col]), f'{output}{n+1}'], _, _, _ = sen_slope(series[start:end])
+            elif output == 'mk':
+                _, _, db.loc[db.index.isin([col]), f'{output}{n+1}'] = mann_kendall(series[start:end], **kwargs)
+            start = end
+    return db
+
 # %% General operations
 
 def print_row(df, row, cond = True):
