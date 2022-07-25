@@ -56,6 +56,20 @@ im, cbar = dv.heatmap_TS(sgi_db.to_numpy().transpose().copy(),
 fig.tight_layout()
 plt.show()
 
+#Order the piezometers from north to south
+y = meta.loc[meta['CODICE'].isin(sgi_db.columns), ['CODICE', 'Y_WGS84']]
+y.sort_values(by = 'Y_WGS84', inplace = True)
+sorter = y['CODICE'].tolist()
+col_labels = sgi_db.resample('YS').mean().index.year
+fig, ax = plt.subplots(figsize = (6.4, 3.6), dpi = 500)
+im, cbar = dv.heatmap_TS(sgi_db[sorter].to_numpy().transpose().copy(),
+                   row_labels = sgi_db[sorter].columns, col_labels = col_labels,
+                   step = 12, ax = ax, cbarlabel = "SGI",
+                   rotate = True, aspect = 'auto',
+                   cmap = plt.get_cmap("coolwarm_r", 8))
+fig.tight_layout()
+plt.show()
+
 # %% Trial: yearly SGI
 
 # Yearly mean of SGI

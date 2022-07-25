@@ -38,8 +38,8 @@ for col in head_fill.columns:
     db_mk.loc[idx, 'z'], db_mk.loc[idx, 'p'], db_mk.loc[idx, 'tr'] = da.mann_kendall(head_fill[col].dropna(), confidence)
     db_slope.loc[col, :][0], db_slope.loc[col, :][1], _, _ = da.sen_slope(head_fill[col].dropna())
 
-db_mk.to_csv('analisi_serie_storiche/res_MK.csv')
-db_slope.to_csv('analisi_serie_storiche/res_sslope.csv')
+# db_mk.to_csv('analisi_serie_storiche/res_MK.csv')
+# db_slope.to_csv('analisi_serie_storiche/res_sslope.csv')
 
 # %% Calculate a 5-year step Mann-Kendall/Sen's slope
 
@@ -65,7 +65,43 @@ for piezo in db_slope.index:
 
 # %% Obtain the Sen's slope as a % of the water table
 
+import rasterio
+from rasterio.plot import show
+import geopandas as gpd
 
+#Load the bottom of the hydrogeological basin
+base = rasterio.open("data/soggiacenza_base_ISS/soggiacenza.tif")
+
+gdf = meta.loc[meta['CODICE'].isin(db_slope.index), ['CODICE', 'X_WGS84', 'Y_WGS84', 'PROFONDITA']]
+coord_list = [(x,y) for x,y in zip(gdf['X_WGS84'] , gdf['Y_WGS84'])]
+gdf['value'] = [x for x in base.sample(coord_list)]
+
+file_name = 'data/soggiacenza_base_ISS/soggiacenza.tif'
+with rasterio.open(file_name) as src:
+     band1 = src.read(1)
+     print('Band1 has shape', band1.shape)
+     height = band1.shape[0]
+     width = band1.shape[1]
+     cols, rows = np.meshgrid(np.arange(width), np.arange(height))
+     xs, ys = rasterio.transform.xy(src.transform, rows, cols)
+     lons= np.array(xs)
+     lats = np.array(ys)
+     print('lons shape', lons.shape)
+
+#obtain the closest point from the raster to the one in gdf
+#obtain the raster value of the closest point
+#assign it to the point in the gdf
+#compute the saturated height
+
+#Visualize the points overlayed to the raster
+#Transform the piezometer metadata in a geodataframe
+gdf = meta.loc[meta['CODICE'].isin(db_slope.index), ['CODICE', 'X_WGS84', 'Y_WGS84']]
+gdf = gpd.GeoDataFrame(gdf, geometry = gpd.points_from_xy(gdf['X_WGS84'], gdf['Y_WGS84']))
+fig, ax = plt.subplots()
+# transform rasterio plot to real world coords
+extent = [base.bounds[0], base.bounds[2], base.bounds[1], base.bounds[3]]
+ax = rasterio.plot.show(base, extent=extent, ax=ax, cmap='pink')
+gdf.plot(ax=ax)
 
 # %% Compare two methods of sen's slope computation
 
