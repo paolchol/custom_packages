@@ -13,7 +13,7 @@ import pandas as pd
 # %% Obtain a monthly dataset of the total head for each piezometer
 
 #Load the basin's piezometer dataset
-fname = 'data/IT03GWBISSAPTA.csv'
+fname = 'data/original_dataset/IT03GWBISSAPTA.csv'
 df = pd.read_csv(fname)
 #Set the data format
 df['DATA'] = pd.to_datetime(df['DATA'], format = '%d/%m/%Y')
