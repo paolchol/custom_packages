@@ -98,7 +98,7 @@ F1 = [1, 2]
 F2 = [3, 4]
 Fs = [F0, F1, F2]
 
-dv.plot_SSA_results(ssa, Fs, file = f'plot/analisi/SSA_{col}_L{L}.html',
+dv.plot_SSA_results(ssa, Fs, file = f'plot/analisi/SSA/SSA_{col}_L{L}.html',
                     title = f"{col} - {meta.loc[meta['CODICE'] == col, 'COMUNE'].values[0]}",
                     over = ['Periodicità annuale', 'Periodicità semestrale'],
                     alpha = 0.7, tags = ['Trend', 'Periodicità annuale', 'Periodicità semestrale'],
