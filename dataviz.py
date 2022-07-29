@@ -6,19 +6,18 @@ author: paolo
 """
 
 import pandas as pd
-from matplotlib import pyplot
 import plotly.express as px
 from plotly.offline import plot
 import matplotlib.pyplot as plt
 import numpy as np
 
 def fast_TS_visualization(df):
-    pyplot.figure()
+    plt.figure()
     for i, column in enumerate(df.columns, start = 1):
-    	pyplot.subplot(len(df.columns), 1, i)
-    	pyplot.plot(df.index, df[column].values)
-    	pyplot.title(column, y = 0.5, loc = 'right')
-    pyplot.show()
+    	plt.subplot(len(df.columns), 1, i)
+    	plt.plot(df.index, df[column].values)
+    	plt.title(column, y = 0.5, loc = 'right')
+    plt.show()
 
 def interactive_TS_visualization(df, xlab = 'X', ylab = 'Y', file = 'temp.html'):
     figure = px.line(df)
