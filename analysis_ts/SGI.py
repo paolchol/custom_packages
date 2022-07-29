@@ -35,7 +35,7 @@ for col in head_fill.columns:
     idx = np.invert(head_fill[col].isna())
     sgi_db.loc[idx, col] = ps.stats.sgi(head_fill[col].dropna())
 
-# sgi_db.to_csv('analisi_serie_storiche/res_SGI.csv')
+# sgi_db.to_csv('data/results/analysis_ts/res_SGI.csv')
 
 # %% Visualize the SGI
 
