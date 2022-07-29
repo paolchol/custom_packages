@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 head = pd.read_csv('data/head_IT03GWBISSAPTA.csv', index_col = 'DATA')
 meta = pd.read_csv('data/metadata_piezometri_ISS.csv')
 
-# %% Select solid time series and fill missing values
+# %% Select solid time series, remove outliers and fill missing values
 
 cn = da.CheckNA(head)
 filtered, removed = cn.filter_col(20, True)
@@ -53,15 +53,31 @@ fig, ax = plt.subplots(figsize = (6.4, 3.6), dpi = 500)
 dv.heatmap_TS(db_stepss, db_stepss.index, db_stepss.columns, step = 1,
                ax = ax, cbarlabel = "Sen's slope (5 year step)",
               rotate = True, aspect = 'auto',
-              cmap = plt.get_cmap("viridis_r", 8),
+              cmap = plt.get_cmap("viridis_r", 5),
               title = "Sen's slope computed for 5-year steps")
 fig.tight_layout()
 plt.show()
+
+#For a specific time series
+#MERATE
+col = meta.loc[meta['COMUNE'] == 'MERATE', 'CODICE'].values[0]
+dv.plot_step_sen(head_fill, col, figsize = (6.4, 3.6), dpi = 500)
 
 # %% Visualize the slope overlayed to the time series
 
 for piezo in db_slope.index:
     dv.plot_sen(head_fill, piezo, db_slope)
+
+#For a specific time series
+#MERATE
+col = meta.loc[meta['COMUNE'] == 'MERATE', 'CODICE'].values[0]
+dv.plot_sen(head_fill, col, db_slope)
+db_mk.loc[col, :]
+
+#BUSTO GAROLFO
+col = meta.loc[meta['COMUNE'] == 'BUSTO GAROLFO', 'CODICE'].values[0]
+dv.plot_sen(head_fill, col, db_slope)
+db_mk.loc[col, :]
 
 # %% Obtain the Sen's slope as a % of the water table
 

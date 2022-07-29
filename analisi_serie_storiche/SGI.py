@@ -35,7 +35,7 @@ for col in head_fill.columns:
     idx = np.invert(head_fill[col].isna())
     sgi_db.loc[idx, col] = ps.stats.sgi(head_fill[col].dropna())
 
-sgi_db.to_csv('analisi_serie_storiche/res_SGI.csv')
+# sgi_db.to_csv('analisi_serie_storiche/res_SGI.csv')
 
 # %% Visualize the SGI
 
@@ -58,7 +58,7 @@ plt.show()
 
 #Order the piezometers from north to south
 y = meta.loc[meta['CODICE'].isin(sgi_db.columns), ['CODICE', 'Y_WGS84']]
-y.sort_values(by = 'Y_WGS84', inplace = True)
+y.sort_values(by = 'Y_WGS84', ascending = False, inplace = True)
 sorter = y['CODICE'].tolist()
 col_labels = sgi_db.resample('YS').mean().index.year
 fig, ax = plt.subplots(figsize = (6.4, 3.6), dpi = 500)
@@ -69,6 +69,23 @@ im, cbar = dv.heatmap_TS(sgi_db[sorter].to_numpy().transpose().copy(),
                    cmap = plt.get_cmap("coolwarm_r", 8))
 fig.tight_layout()
 plt.show()
+
+#Plot showing the municipality instead of the code
+y = meta.loc[meta['CODICE'].isin(sgi_db.columns), ['CODICE', 'Y_WGS84']]
+y.sort_values(by = 'Y_WGS84', ascending = False, inplace = True)
+sorter = y['CODICE'].tolist()
+col_labels = sgi_db.resample('YS').mean().index.year
+tags = meta.loc[meta['CODICE'].isin(sgi_db.columns), ['CODICE', 'COMUNE']]
+tags.index = tags['CODICE']
+fig, ax = plt.subplots(figsize = (6.4, 3.6), dpi = 500)
+im, cbar = dv.heatmap_TS(sgi_db[sorter].to_numpy().transpose().copy(),
+                   row_labels = tags.loc[sorter, 'COMUNE'], col_labels = col_labels,
+                   step = 12, ax = ax, cbarlabel = "SGI",
+                   rotate = True, aspect = 'auto',
+                   cmap = plt.get_cmap("coolwarm_r", 8))
+fig.tight_layout()
+plt.show()
+
 
 # %% Trial: yearly SGI
 

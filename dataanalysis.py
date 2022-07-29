@@ -7,8 +7,10 @@ author: paolo
 
 import numpy as np
 import pandas as pd
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import scipy.stats as st
+import plotly.express as px
+from plotly.offline import plot
 
 # %% Outlier detection and rejection
 
@@ -148,6 +150,7 @@ def sen_slope(vals, confidence = 0.95, scipy = True):
     #source: https://github.com/manaruchi/MannKendall_Sen_Rainfall
     
     if scipy: return st.mstats.theilslopes(vals)
+    #this returns 4 values, not 3
     
     alpha = 1 - confidence
     n = len(vals)
@@ -173,7 +176,6 @@ def sen_slope(vals, confidence = 0.95, scipy = True):
     se = ((n * (n-1) * (2 * n + 5) - freq) / 18.0) ** 0.5
     
     #lets find K value
-    
     k = st.norm.ppf(1-(alpha/2)) * se
     
     slope = np.median(boxlist)

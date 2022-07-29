@@ -106,11 +106,87 @@ def heatmap_TS(data, row_labels, col_labels, step, ax = None, title = None,
 
 # %% Plot Sen's slope
 
-def plot_sen(df, piezo, db_slope, step = 12, figsize = (6.4, 3.6), dpi = 500):
+def plot_sen(df, piezo, db_slope, pltstep = 12, figsize = (6.4, 3.6), dpi = 500):
     fig, ax = plt.subplots(figsize = figsize, dpi = dpi)
     ax.plot(df[piezo].dropna())
     ax.plot(df[piezo].dropna().index, db_slope.loc[piezo, 'intercept'] + db_slope.loc[piezo, 'slope'] * np.array([i for i in range(len(df[piezo].dropna().index))]), 'r-')
-    ax.set_xticks(np.arange(0, len(df[piezo].dropna()), step), labels = [df.index[i] for i in np.arange(0, len(df[piezo].dropna()), step)])
+    ax.set_xticks(np.arange(0, len(df[piezo].dropna()), pltstep), labels = [df[piezo].dropna().index[i] for i in np.arange(0, len(df[piezo].dropna()), pltstep)])
     ax.set_title(piezo)
     plt.setp(ax.get_xticklabels(), rotation = 30, ha = "right",
     rotation_mode = "anchor")
+    
+def plot_step_sen(df, piezo, step = 5*12, pltstep = 12, **kwargs):
+    import dataanalysis as da
+    
+    series = df[piezo].dropna()
+    fig, ax = plt.subplots(**kwargs)
+    ax.plot(series)
+    start, end = 0, 0
+    for n in range(round(len(series)/step)):
+        end = step*(n+1) if step*(n+1) < len(series) else len(series)
+        m, q, _, _ = da.sen_slope(series[start:end])
+        ax.plot(series[start:end].index, q + m*np.array([i for i in range(len(series[start:end].index))]), 'r-')
+        start = end    
+    ax.set_xticks(np.arange(0, len(series), pltstep), labels = [series.index[i] for i in np.arange(0, len(series), pltstep)])
+    ax.set_title(piezo)
+    plt.setp(ax.get_xticklabels(), rotation = 30, ha = "right",
+    rotation_mode = "anchor")
+
+# %% SSA supporting functions
+
+def plot_Wcorr_Wzomm(SSA_object, name, L, num = 0):
+    if(num == 0):
+        SSA_object.plot_wcorr()
+        plt.title(f"W-Correlation for {name} - window size {L}")
+    else:
+        SSA_object.plot_wcorr(max = num)
+        plt.title(f"W-Correlation for {name} - window size {L} \n- Zoomed at the first {num + 1} components")
+
+def plot_SSA_results(SSA_object, Fs, noise = None, file = 'SSA_temp.html',
+                     tags = None, alpha = 1, over = None,
+                     # final = False,
+                     # label = 'SSA results', 
+                     # xlab = "Date", ylab = "Water table level [MAMSL]",
+                     **kwargs):
+    
+    #import plotly.graph_objs as go
+    
+    df = pd.DataFrame({'Original': SSA_object.orig_TS.values})
+    df.index = SSA_object.orig_TS.index
+    if noise:
+        df['Noise'] = SSA_object.reconstruct(noise).values
+    if tags:
+        for i, F in enumerate(Fs):
+            tag = tags[i]
+            df[tag] = SSA_object.reconstruct(F).values
+    else:
+        for i, F in enumerate(Fs):
+            tag = f'F{i}'
+            df[tag] = SSA_object.reconstruct(F).values
+    if over:
+        for o in over:
+            df[o] = df[o] + df['Original'].mean()        
+    # if final: 
+    #     names = ['Trend', 'Periodicity']
+    #     for i, F in enumerate(Fs):
+    #         name = names[i]
+    #         df[name] = SSA_object.reconstruct(F).values
+    # else:
+    #     for i, F in enumerate(Fs):
+    #         name = f'F{i}'
+    #         df[name] = SSA_object.reconstruct(F).values
+    #Would be nicer to have the original series with a bit of transparency
+    #Also to add labels to the axis and a title
+    # plt.title(label)
+    # plt.xlabel("Date")
+    # plt.ylabel("Level [MASL - Meters Above Sea Level]")
+    # Also save it with a name instead of temp-plot, and in a specified path
+    figure = px.line(df)
+    figure.update_traces(opacity = alpha)
+    figure.update_layout(**kwargs)
+        # xaxis_title = xlab,
+        # yaxis_title = ylab,
+        # legend_title = "Variables"
+        # )
+    plot(figure, filename = file)
+    # return(df)
