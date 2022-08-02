@@ -120,10 +120,40 @@ for i in range(len(ts2.columns)):
 meta2 = df2.iloc[:, [x for x in range(10)]].set_index('CODICE')
 #Il database contiente il livello piezometrico, non è necessario fare ulteriori operazioni
 
-# %% Salva i risultati
+# %% Join dei due dataset
 
-# ts1.to_csv('data/old_head_dataset/head_old_TICINOADDA.csv')
-# meta1.to_csv('data/old_head_dataset/meta_old_TICINOADDA.csv')
-# %% join df1 e df2
+def adjust(meta, keep = '_x', fillwith = 'y'):
+    idx = [keep in meta.columns[i] for i in range(len(meta.columns))]
+    for col in meta.columns[idx]:
+        new_col = col.split('_')[0]
+        meta[new_col] = meta.loc[:, col]
+        meta.loc[meta.loc[:, col].isna(), new_col] = meta.loc[meta.loc[:, col].isna(), f'{new_col}{fillwith}']
+        meta.drop([col, f'{new_col}{fillwith}'], axis = 1, inplace = True)
+    return meta
 
-df = pd.join(df1, df2)
+#Join di meta1 e meta2
+meta = pd.merge(meta1, meta2, how = 'outer', on = 'CODICE')
+idx = ['_x' in meta.columns[i] for i in range(len(meta.columns))]
+for col in meta.columns[idx]:
+    new_col = col.split('_')[0]
+    meta[new_col] = meta.loc[:, col]
+    meta.loc[meta.loc[:, col].isna(), new_col] = meta.loc[meta.loc[:, col].isna(), f'{new_col}_y']
+    meta.drop([col, f'{new_col}_y'], axis = 1, inplace = True)
+colorder = ['COMUNE', 'x', 'y', 'z', 'INFO', 'PROVINCIA', 'STRAT.', 'FALDA', 'SETTORE']
+meta = meta[colorder]
+
+#Join di ts1 e ts2
+idx = [x in ts1.columns for x in ts2.columns]
+tool = ts2.drop(ts2.columns[idx], axis = 1)
+ts = pd.merge(ts1, tool, how = 'outer', left_index=True, right_index=True)
+tool = ts2.loc[:, idx]
+prova = pd.merge(ts, tool, how = 'outer', left_index=True, right_index=True)
+
+prova1 = adjust(prova, '_x', '_y')
+
+idx = [x in ts1.columns and x in ts2.columns for x in prova1.columns]
+vis = prova1.loc[:, idx]
+#combinare più funzioni
+#attaccare prima solo i piezometri non presenti in ts1
+#poi inserire nei piezometri presenti i dati da ts2 (dove c'è nan)
+
