@@ -50,7 +50,7 @@ for idx in cond.index:
 ts1 = df1.iloc[:, [0] + [x for x in range(6, len(df1.columns))]].copy()
 ts1 = ts1.set_index('CODICE').transpose()
 ts1.set_index(pd.date_range('1996-01-01', '2003-01-01', freq = 'MS'), inplace = True)
-#Rimuovere codici e caratteri non voluti
+#Rimuovere codici e caratteri non voluti (trovati con trial and error trasformando in numerico)
 ts1.replace(' -', np.nan, inplace = True)
 ts1.replace(' ', np.nan, inplace = True)
 ts1.replace('asciutto', '9999', inplace = True) #sostituisce asciutto con 9999, così che il livello risulti poi negativo
@@ -78,41 +78,52 @@ ts1[ts1 < 0] = 0 #sostituisce i livelli negativi con 0 (condizione "asciutto")
 df2 = laureg2.copy()
 df2 = df2.iloc[:, 0:df2.columns.get_loc('apr-03')+1]
 df2['COMUNE'] = [laureg2['COMUNE'][i].split('-')[0].upper() for i in range(len(laureg2['COMUNE']))]
-
 df2['COMUNE'] = [df2['COMUNE'][i].rstrip() for i in range(len(df2['COMUNE']))]
-
 df2['INFO'] = [f"{laureg2['INFO'][i]} {' '.join(laureg2['COMUNE'][i].split('-')[1:])}" for i in range(len(laureg2['COMUNE']))]
-# sum(df2.loc[:, 'CODICE'].isna()) #nessun codice mancante
-
-# df2['CODICE'] = df2['CODICE'].astype("string")
-
+#Rimuovi colonne vuote
+df2.drop(['NOTE', 'PUBBLICO'], axis = 1, inplace = True)
+#Rinomina le colonne come df1
+df2.rename(columns = {'X_GAUSS-BOAGA': 'x', 'Y_GAUSS-BOAGA': 'y', 'Q': 'z'}, inplace = True)
+#Ricerca di codici mancanti o duplicati
+sum(df2.loc[:, 'CODICE'].isna()) #nessun codice mancante
 sum(df2.duplicated('CODICE')) #14 codici duplicati
 #Visualizza tutti i duplicati
-
 vis = pd.concat(g for _, g in df2.groupby("CODICE") if len(g) > 1)
 #Rimuovi duplicati
 for code in df2.loc[df2.duplicated('CODICE'), 'CODICE']:
-    dupl = vis.loc[vis['CODICE'] == code, 'COMUNE']
-    s = dupl.to_numpy()
-    if (s[0] == s).all():
-        #rimuovi l'indice corrispondente alla prima riga da df2
-        pass
-    else:
-        #aggiungi il numero del settore al codice
-        #{codice}-S{settore}
-        pass
-        
+    if code in df2.loc[df2.duplicated('CODICE'), 'CODICE'].values: 
+        dupl = vis.loc[vis['CODICE'] == code, 'COMUNE']
+        s = dupl.to_numpy()
+        if (s[0] == s).all():
+            #Mantiene l'ultimo duplicato (contenente "CAP" nell'info)
+            keep = df2.loc[dupl.index, :].drop_duplicates('CODICE', keep = 'last').index[0]
+            df2.drop(dupl.index[dupl.index!= keep], inplace = True)
+        else:
+            #Aggiunge il numero del settore al codice
+            #{codice}-S{settore}
+            df2.loc[dupl.index, 'CODICE'] = [f"{df2['CODICE'][i]}-S{df2['SETTORE'][i]}" for i in dupl.index]
 
-
-#rendere i nomi delle colonne uguali a quelli di df1
+#Ottenere il dataset delle serie dati
+ts2 = df2.iloc[:, [2] + [x for x in range(10, len(df2.columns))]].copy()
+ts2 = ts2.set_index('CODICE').transpose()
+ts2.set_index(pd.date_range('2001-01-01', '2003-04-01', freq = 'MS'), inplace = True)
+#Rimuovere codici e caratteri non voluti (trovati con trial and error trasformando in numerico)
+ts2.replace(['#', '***', 'xxx'], np.nan, inplace = True)
+ts2.replace(['ERRORE DI POZZO', 'in manut.', 'manca'], np.nan, inplace = True)
+ts2.replace('asciutto', 0, inplace = True)
+ts2.replace('194,9 (*)', 194.9, inplace = True)
+ts2.replace('194,8 (*)', 194.8, inplace = True)
+#Transforma in valori numerici
+for i in range(len(ts2.columns)):
+    ts2.iloc[:, i] = pd.to_numeric(ts2.iloc[:, i])
+#Ottenere il dataset dei metadata
+meta2 = df2.iloc[:, [x for x in range(10)]].set_index('CODICE')
+#Il database contiente il livello piezometrico, non è necessario fare ulteriori operazioni
 
 # %% Salva i risultati
 
-#Salva il riult
 # ts1.to_csv('data/old_head_dataset/head_old_TICINOADDA.csv')
 # meta1.to_csv('data/old_head_dataset/meta_old_TICINOADDA.csv')
-
-
 # %% join df1 e df2
 
 df = pd.join(df1, df2)
