@@ -136,11 +136,29 @@ ts = pd.merge(ts1, tool, how = 'outer', left_index=True, right_index=True)
 tool = ts2.loc[:, idx]
 ts = pd.merge(ts, tool, how = 'outer', left_index=True, right_index=True)
 ts = dm.joincolumns(ts, '_x', '_y')
+ts.index.rename('DATA', inplace = True)
 
-idx = [x in ts1.columns and x in ts2.columns for x in ts.columns]
-vis = ts.loc[:, idx]
-#combinare più funzioni
-#attaccare prima solo i piezometri non presenti in ts1
-#poi inserire nei piezometri presenti i dati da ts2 (dove c'è nan)
+# %% Salvataggio dei dataset ottenuti
 
-p = dm.joincolumns(ts)
+meta.to_csv('data/old_head_dataset/meta_old_TICINOADDA.csv')
+ts.to_csv('data/old_head_dataset/head_old_TICINOADDA.csv')
+
+# %% Operazioni sui dataset completi
+
+#Modifica di meta e serie storiche
+#Rimozione piezometri senza coordinate
+idx = meta.loc[:, ['x', 'y']].isna().apply(all, 1)
+meta = meta.drop(meta.index[idx])
+ts = ts.loc[:, ts.columns.isin(meta.index)]
+#Rimozione piezometri senza quota
+idx = meta.loc[:, 'z'].isna()
+meta = meta.drop(meta.index[idx])
+ts = ts.loc[:, ts.columns.isin(meta.index)]
+
+#Senza modificare meta
+#Rimozione piezometri senza coordinate
+idx = np.invert(meta.loc[:, ['x', 'y']].isna().apply(all, 1))
+ts = ts[[col for col in meta.loc[idx, :].index if (col in ts.columns)]]
+#Rimozione piezometri senza quota
+idx = np.invert(meta.loc[:, 'z'].isna())
+ts = ts[[col for col in meta.loc[idx, :].index if (col in ts.columns)]]

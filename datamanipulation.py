@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Functions for dataset manipulation
+For data manipulation I mean:
+    - operations on the datasets such as merge and concat
+    - rows or columns removals
 
 @author: paolo
 """
-
-import pandas as pd
-import numpy as np
 
 def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     """
@@ -34,21 +34,11 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
 
     """
     idx = [keep in col for col in df.columns]
-    # newdf = pd.DataFrame(np.zeros([len(df.index), sum(idx)]),
-    #                      columns = [col.split('_')[0] for col in df.columns[idx]])
-    
-    # for col in df.columns[idx]:
-    #     newcol = col.split('_')[0]
-    #     newdf[newcol] = df.loc[:, col]
-    #     pos = newdf.loc[:, newcol].isna()
-    #     newdf.loc[pos, newcol] = df.loc[df.loc[:, col].isna(), f'{newcol}{fillwith}']
-    
-    # return newdf
-    
     for col in df.columns[idx]:
-        new_col = col.split('_')[0]
-        df[new_col] = df.loc[:, col]
-        df.loc[df.loc[:, col].isna(), new_col] = df.loc[df.loc[:, col].isna(), f'{new_col}{fillwith}']
-        df.drop([col, f'{new_col}{fillwith}'], axis = 1, inplace = True)
+        newcol = col.split('_')[0]
+        pos = df.loc[:, col].isna()
+        df.loc[pos, col] = df.loc[pos, f'{newcol}{fillwith}']
+        df.drop(f'{newcol}{fillwith}', axis = 1, inplace = True)
+        df.rename(columns = {f'{col}': f'{newcol}'}, inplace = True)
     if col_order: df = df[col_order]
     return df
