@@ -13,7 +13,7 @@ import pandas as pd
 # %% Obtain a monthly dataset of the total head for each piezometer
 
 #Load the basin's piezometer dataset
-fname = 'data/original_dataset/IT03GWBISSAPTA.csv'
+fname = 'data//PTUA2022/original/IT03GWBISSAPTA.csv'
 df = pd.read_csv(fname)
 #Set the data format
 df['DATA'] = pd.to_datetime(df['DATA'], format = '%d/%m/%Y')
@@ -27,7 +27,7 @@ head = head.resample("1MS").mean()
 # %% Obtain the piezometer metadata of the GW basin considered 
 
 #Load the full metadata dataset
-meta = pd.read_csv('data/metadata_piezometri_ISS.csv')
+meta = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv')
 #To extract only the metadata of the considered basin
 basin = fname.split('.')[0].split('/')[1]
 meta_sel = meta.loc[meta['BACINO_WISE'] == basin, :]

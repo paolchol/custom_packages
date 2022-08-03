@@ -13,7 +13,7 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     Joins the overlapping columns in a merged dataframe.
     It keeps the 'keep' column and fills the nan with the values in 'fillwith'
     column.
-
+    
     Parameters
     ----------
     df : pandas.DataFrame
@@ -31,7 +31,6 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     -------
     df : pandas.DataFrame
         Dataframe with joined overlapping columns
-
     """
     idx = [keep in col for col in df.columns]
     for col in df.columns[idx]:

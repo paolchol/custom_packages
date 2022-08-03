@@ -16,8 +16,8 @@ import matplotlib.pyplot as plt
 
 # %% Load data and metadata
 
-head = pd.read_csv('data/head_IT03GWBISSAPTA.csv', index_col = 'DATA')
-meta = pd.read_csv('data/metadata_piezometri_ISS.csv')
+head = pd.read_csv('data/PTUA2022/head_IT03GWBISSAPTA.csv', index_col = 'DATA')
+meta = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv')
 
 # %% Select solid time series and fill missing values
 

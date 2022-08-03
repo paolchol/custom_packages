@@ -4,7 +4,7 @@ install.packages("zoo")
 library(zoo)
 
 setwd('C:/SFS')
-head = read.csv('./data/head_IT03GWBISSAPTA.csv')
+head = read.csv('./data/PTUA2022/head_IT03GWBISSAPTA.csv')
 
 head_fill = head
 
