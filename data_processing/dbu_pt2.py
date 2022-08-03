@@ -15,5 +15,6 @@ import pandas as pd
 
 # %% Load the metadata
 
-meta = pd.read_csv('data/metadata_piezometri_ISS.csv', index_col = 'CODICE')
-metaold = pd.read_csv('data/ol')
+meta = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv', index_col = 'CODICE')
+metaold = pd.read_csv('data/old_head_dataset/meta_old_TICINOADDA.csv')
+codes = pd.re
