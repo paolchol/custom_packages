@@ -144,8 +144,8 @@ ts.index.rename('DATA', inplace = True)
 
 # %% Salvataggio dei dataset ottenuti
 
-meta.to_csv('data/PTUA2003/meta_old_TICINOADDA.csv')
-ts.to_csv('data/PTUA2003/head_old_TICINOADDA.csv')
+meta.to_csv('data/PTUA2003/meta_PTUA2003_TICINOADDA.csv')
+ts.to_csv('data/PTUA2003/head_PTUA2003_TICINOADDA.csv')
 
 # %% Operazioni sui dataset completi
 

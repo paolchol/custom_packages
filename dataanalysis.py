@@ -2,6 +2,12 @@
 """
 Collection of custom functions for basic data analysis
 
+Sections:
+    - Outlier detection and rejection
+    - Missing data detection
+    - Mann-Kedall test and Sen's slope
+    - General operations on dataframes
+
 author: paolo
 """
 
@@ -9,8 +15,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats as st
-import plotly.express as px
-from plotly.offline import plot
 
 # %% Outlier detection and rejection
 
@@ -35,7 +39,7 @@ class CheckOutliers():
             self.output.loc[i, 'perc_outlier'] = ((sum(df[column] > upper_limit) + sum(df[column] < lower_limit))/len(df[column]))*100
     
     def plot(self, tag = 'perc_outlier'):
-        plt.pyplot.plot(self.output['ID'], self.output[tag])
+        plt.plot(self.output['ID'], self.output[tag])
         #to be improved. example: subplots
         #reduce the size of the x labels
     
@@ -53,7 +57,6 @@ class CheckOutliers():
         return output
         #add a method to return the "positions" of the outliers,
         #the index basically, and their values
-        
 
 # %% Missing data detection
 
@@ -213,6 +216,31 @@ def step_trend(df, step, output = 'ss', dropna = True, **kwargs):
                 _, _, db.loc[db.index.isin([col]), f'{output}{n+1}'] = mann_kendall(series[start:end], **kwargs)
             start = end
     return db
+
+# %% Spatial operations
+
+def find_nearest_point(point, tgpoints, namelat = 'Lat', namelon = 'Lon', namepoint = 'label'):
+    # This function finds the nearest point to a specified point (point) from
+    # a set of coordinates (tgpoints)
+    #Define the system
+    import pyproj
+    geod = pyproj.Geod(ellps = 'WGS84')
+    #Create a dataframe containing the set points
+    #df = pd.DataFrame(point)
+    df = pd.DataFrame(point)
+    lat0 = point[namelat]; lon0 = point[namelon]
+    lst = []
+    for lat1, lon1 in zip(tgpoints[namelat], tgpoints[namelon]):
+        _, _, distance = geod.inv(lon0, lat0, lon1, lat1)
+        lst.append(distance/1e3)
+    df_dist = pd.DataFrame(lst, columns=['dist'])
+    idx_min = np.argmin(df_dist)
+        
+    df.loc['target_name'] = tgpoints.loc[idx_min, namepoint]
+    df.loc['target_lat'] = tgpoints.loc[idx_min, namelat]
+    df.loc['target_lon'] = tgpoints.loc[idx_min, namelon]
+    df.loc['distance'] = df_dist.iloc[idx_min].values
+    return df.T
 
 # %% General operations
 
