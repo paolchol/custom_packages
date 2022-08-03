@@ -122,23 +122,10 @@ meta2 = df2.iloc[:, [x for x in range(10)]].set_index('CODICE')
 
 # %% Join dei due dataset
 
-def adjust(meta, keep = '_x', fillwith = 'y'):
-    idx = [keep in meta.columns[i] for i in range(len(meta.columns))]
-    for col in meta.columns[idx]:
-        new_col = col.split('_')[0]
-        meta[new_col] = meta.loc[:, col]
-        meta.loc[meta.loc[:, col].isna(), new_col] = meta.loc[meta.loc[:, col].isna(), f'{new_col}{fillwith}']
-        meta.drop([col, f'{new_col}{fillwith}'], axis = 1, inplace = True)
-    return meta
+import datamanipulation as dm
 
 #Join di meta1 e meta2
-meta = pd.merge(meta1, meta2, how = 'outer', on = 'CODICE')
-idx = ['_x' in meta.columns[i] for i in range(len(meta.columns))]
-for col in meta.columns[idx]:
-    new_col = col.split('_')[0]
-    meta[new_col] = meta.loc[:, col]
-    meta.loc[meta.loc[:, col].isna(), new_col] = meta.loc[meta.loc[:, col].isna(), f'{new_col}_y']
-    meta.drop([col, f'{new_col}_y'], axis = 1, inplace = True)
+meta = dm.joincolumns(pd.merge(meta1, meta2, how = 'outer', on = 'CODICE'))
 colorder = ['COMUNE', 'x', 'y', 'z', 'INFO', 'PROVINCIA', 'STRAT.', 'FALDA', 'SETTORE']
 meta = meta[colorder]
 
@@ -147,13 +134,13 @@ idx = [x in ts1.columns for x in ts2.columns]
 tool = ts2.drop(ts2.columns[idx], axis = 1)
 ts = pd.merge(ts1, tool, how = 'outer', left_index=True, right_index=True)
 tool = ts2.loc[:, idx]
-prova = pd.merge(ts, tool, how = 'outer', left_index=True, right_index=True)
+ts = pd.merge(ts, tool, how = 'outer', left_index=True, right_index=True)
+ts = dm.joincolumns(ts, '_x', '_y')
 
-prova1 = adjust(prova, '_x', '_y')
-
-idx = [x in ts1.columns and x in ts2.columns for x in prova1.columns]
-vis = prova1.loc[:, idx]
+idx = [x in ts1.columns and x in ts2.columns for x in ts.columns]
+vis = ts.loc[:, idx]
 #combinare più funzioni
 #attaccare prima solo i piezometri non presenti in ts1
 #poi inserire nei piezometri presenti i dati da ts2 (dove c'è nan)
 
+p = dm.joincolumns(ts)
