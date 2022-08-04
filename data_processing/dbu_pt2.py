@@ -47,12 +47,18 @@ idx = metaold.index.isin(codes['CODICE_SIF'])
 sifpp = codes.loc[codes['CODICE_SIF'].isin(metaold.index), ['CODICE_SIF', 'CODICE_PP']]
 sifpp.set_index('CODICE_SIF', inplace = True)
 metaold_j = pd.merge(metaold, sifpp, how = 'left', left_index = True, right_index = True)
-metaold_j.reset_index(level = 'CODICE_SIF', inplace = True)
+metaold_j.reset_index(inplace = True)
+metaold_j.rename(columns = {'index': 'CODICE_SIF'}, inplace = True)
 metaold_j.set_index('CODICE_PP', inplace = True)
-
-merged = pd.merge(meta, metaold_j, how = 'left', left_index = True, right_index = True)
 #Associazione metadata PTUA2003 a metadata PTUA2022, usando codice PP
+metamerged = pd.merge(meta, metaold_j['CODICE_SIF'], how = 'left', left_index = True, right_index = True)
+#Aggiunta della serie storica PTUA2003 alla serie storica PTUA2022 per i piezometri
+# individuati con doppio codice
+head2022 = pd.read_csv('data/PTUA2022/head_IT03GWBISSAPTA.csv')
+head2003 = pd.read_csv('data/PTUA2003/head_PTUA2003_TICINOADDA.csv')
+
 
 
 # %% Find the nearest piezometer of meta to the piezometers of metaold
 
+#Check: "validare" usando i piezometri per cui si sanno già i doppi codici
