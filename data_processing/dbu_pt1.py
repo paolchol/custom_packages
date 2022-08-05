@@ -12,6 +12,7 @@ il PTUA 2003
 
 import pandas as pd
 import numpy as np
+import datawrangling as dw
 
 # %% Controllo sui fogli presenti in LAU REG ticiadd.xls
 
@@ -126,10 +127,8 @@ meta2 = df2.iloc[:, [x for x in range(10)]].set_index('CODICE')
 
 # %% Join dei due dataset
 
-import datamanipulation as dm
-
 #Join di meta1 e meta2
-meta = dm.joincolumns(pd.merge(meta1, meta2, how = 'outer', on = 'CODICE'))
+meta = dw.joincolumns(pd.merge(meta1, meta2, how = 'outer', left_index = True, right_index = True))
 colorder = ['COMUNE', 'x', 'y', 'z', 'INFO', 'PROVINCIA', 'STRAT.', 'FALDA', 'SETTORE']
 meta = meta[colorder]
 
@@ -139,8 +138,14 @@ tool = ts2.drop(ts2.columns[idx], axis = 1)
 ts = pd.merge(ts1, tool, how = 'outer', left_index=True, right_index=True)
 tool = ts2.loc[:, idx]
 ts = pd.merge(ts, tool, how = 'outer', left_index=True, right_index=True)
-ts = dm.joincolumns(ts, '_x', '_y')
+ts = dw.joincolumns(ts, '_x', '_y')
 ts.index.rename('DATA', inplace = True)
+
+#Modifica dei codici SIF
+#I codici SIF hanno uno 0 davanti: va aggiunto
+meta.index = [f'0{code}' if (len(code)>6) and (code[0] != 'P') else code for code in meta.index]
+meta.index.names = ['CODICE']
+ts.columns = [f'0{code}' if (len(code)>6) and (code[0] != 'P') else code for code in ts.columns]
 
 # %% Salvataggio dei dataset ottenuti
 

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Functions for dataset manipulation
-For data manipulation I mean:
+Functions for dataset wrangling
+For data wrangling I mean:
     - operations on the datasets such as merge and concat
     - rows or columns removals
 
 @author: paolo
 """
+
+import pandas as pd
 
 def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     """
@@ -41,3 +43,13 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
         df.rename(columns = {f'{col}': f'{newcol}'}, inplace = True)
     if col_order: df = df[col_order]
     return df
+
+def mergehead(left, right, codes):
+    """
+    Function to merge two time series dataframes based on the codes each piezometer
+    has in each 
+    """
+    y = right[codes]
+    y.columns = codes.index
+    out = joincolumns(pd.merge(left, y, how = 'outer', left_index = True, right_index = True))
+    return(out)
