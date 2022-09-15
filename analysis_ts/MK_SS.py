@@ -81,55 +81,47 @@ db_mk.loc[col, :]
 
 # %% Obtain the Sen's slope as a % of the water table
 
-import rasterio
-from rasterio.plot import show
 import geopandas as gpd
+import numpy as np
+import rasterio
 
 #Load the bottom of the hydrogeological basin
 base = rasterio.open("data/soggiacenza_base_ISS/soggiacenza.tif")
 
-gdf = meta.loc[meta['CODICE'].isin(db_slope.index), ['CODICE', 'X_WGS84', 'Y_WGS84', 'PROFONDITA']]
-coord_list = [(x,y) for x,y in zip(gdf['X_WGS84'] , gdf['Y_WGS84'])]
-gdf['value'] = [x for x in base.sample(coord_list)]
+#Sample the raster with the osservation points' coordinates (opc)
+opc = meta.loc[meta['CODICE'].isin(db_slope.index), ['CODICE', 'X_WGS84', 'Y_WGS84']]
+opc.reset_index(drop = True, inplace = True)
+coord_list = [(x,y) for x,y in zip(opc['X_WGS84'] , opc['Y_WGS84'])]
+opc['value'] = [x for x in base.sample(coord_list)]
+opc['value'] = opc.apply(lambda x: x['value'][0], axis = 1)
+opc.loc[np.where(opc['value'] < 0)[0], 'value'] = np.nan
 
-file_name = 'data/soggiacenza_base_ISS/soggiacenza.tif'
-with rasterio.open(file_name) as src:
-     band1 = src.read(1)
-     print('Band1 has shape', band1.shape)
-     height = band1.shape[0]
-     width = band1.shape[1]
-     cols, rows = np.meshgrid(np.arange(width), np.arange(height))
-     xs, ys = rasterio.transform.xy(src.transform, rows, cols)
-     lons= np.array(xs)
-     lats = np.array(ys)
-     print('lons shape', lons.shape)
+#Obtain the bottom also for observation points otside the raster boundaries
+# - Gather the nearest value on the non-na raster
 
-#obtain the closest point from the raster to the one in gdf
-#obtain the raster value of the closest point
-#assign it to the point in the gdf
-#compute the saturated height
+#Compute the saturated height
+
+#Normalize sen's slope relatively to the saturated height
+
+
+# %% Visualize geodata
+
+import geodata as gd
+import matplotlib.pyplot as plt
+
+#Visualize the raster (labeling NA values as np.nan)
+b = base.read()
+bres = np.reshape(b, (b.shape[0]*b.shape[1], b.shape[2]))
+bres[bres < 0] = np.nan
+gd.plot_raster(base, bres)
 
 #Visualize the points overlayed to the raster
 #Transform the piezometer metadata in a geodataframe
-gdf = meta.loc[meta['CODICE'].isin(db_slope.index), ['CODICE', 'X_WGS84', 'Y_WGS84']]
-gdf = gpd.GeoDataFrame(gdf, geometry = gpd.points_from_xy(gdf['X_WGS84'], gdf['Y_WGS84']))
+opc = meta.loc[meta['CODICE'].isin(db_slope.index), ['CODICE', 'X_WGS84', 'Y_WGS84']]
+opc = gpd.GeoDataFrame(opc, geometry = gpd.points_from_xy(opc['X_WGS84'], opc['Y_WGS84']))
 fig, ax = plt.subplots()
 # transform rasterio plot to real world coords
 extent = [base.bounds[0], base.bounds[2], base.bounds[1], base.bounds[3]]
 ax = rasterio.plot.show(base, extent=extent, ax=ax, cmap='pink')
-gdf.plot(ax=ax)
+opc.plot(ax=ax)
 
-# %% Compare two methods of sen's slope computation
-
-confidence = 0.95
-
-import scipy.stats as st
-
-for col in head_fill.columns:
-    _, _, tr_type = da.mann_kendall(head_fill[col].dropna(), confidence)
-    slope, _, _ = da.sen_slope(head_fill[col].dropna(), confidence, scipy = False)
-    slopesc, _, _, _ = st.mstats.theilslopes(head_fill[col].dropna())
-    print(f"{col}")
-    print(f"Mann-Kendall: {tr_type}")
-    print(f"Sen's slope: {slope}")
-    print(f"Sen's slope (scipy): {slopesc}")
