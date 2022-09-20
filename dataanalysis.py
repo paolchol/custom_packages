@@ -217,31 +217,6 @@ def step_trend(df, step, output = 'ss', dropna = True, **kwargs):
             start = end
     return db
 
-# %% Spatial operations
-
-def find_nearest_point(point, tgpoints, namelat = 'Lat', namelon = 'Lon', namepoint = 'label'):
-    # This function finds the nearest point to a specified point (point) from
-    # a set of coordinates (tgpoints)
-    #Define the system
-    import pyproj
-    geod = pyproj.Geod(ellps = 'WGS84')
-    #Create a dataframe containing the set points
-    #df = pd.DataFrame(point)
-    df = pd.DataFrame(point)
-    lat0 = point[namelat]; lon0 = point[namelon]
-    lst = []
-    for lat1, lon1 in zip(tgpoints[namelat], tgpoints[namelon]):
-        _, _, distance = geod.inv(lon0, lat0, lon1, lat1)
-        lst.append(distance/1e3)
-    df_dist = pd.DataFrame(lst, columns=['dist'])
-    idx_min = np.argmin(df_dist)
-        
-    df.loc['target_name'] = tgpoints.loc[idx_min, namepoint]
-    df.loc['target_lat'] = tgpoints.loc[idx_min, namelat]
-    df.loc['target_lon'] = tgpoints.loc[idx_min, namelon]
-    df.loc['distance'] = df_dist.iloc[idx_min].values
-    return df.T
-
 # %% General operations
 
 def print_row(df, row, cond = True):

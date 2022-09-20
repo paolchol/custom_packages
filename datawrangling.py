@@ -53,3 +53,22 @@ def mergehead(left, right, codes):
     y.columns = codes.index
     out = joincolumns(pd.merge(left, y, how = 'outer', left_index = True, right_index = True))
     return(out)
+
+def remove_wcond(df, cond):
+    """
+    Removes rows/data from a dataframe by applying a specified condition
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        A pandas dataframe.
+    cond : TYPE
+        anything that could be a condition. Example: df['x'].notna()
+
+    Returns
+    -------
+    pandas.DataFrame
+        dataframe with the data specified by the condition.
+
+    """
+    return df[cond]
