@@ -52,6 +52,19 @@ headmerge = dw.mergehead(head2022, head2003, codes)
 
 # dv.interactive_TS_visualization(headmerge, 'data', 'livello [m.s.l.m]', file = 'plot/dbu/merged_0805_TS_IT03GWBISSAPTA.html')
 
+sum(meta2003.index.isin(code_db['CODICE_SIF']))
+sum(meta2003.index.isin(code_db['CODICE_PP']))
+
+idx = meta2003.index.isin(code_db['CODICE_SIF'])
+sifpp = code_db.loc[code_db['CODICE_SIF'].isin(meta2003.index), ['CODICE_SIF', 'CODICE_PP']]
+sifpp.set_index('CODICE_SIF', inplace = True)
+
+test = dw.mergemeta(meta2022, meta2003, link = sifpp,
+                    firstmerge = dict(left_index = True, right_index = True),
+                    secondmerge = dict(left_index = True, right_on = 'CODICE_PP'))
+
+
+
 # %% Find the nearest piezometer of meta to the piezometers of meta2003
 
 meta2003 = meta2003[(meta2003['x'].notna()) & (meta2003['y'].notna())].copy()
