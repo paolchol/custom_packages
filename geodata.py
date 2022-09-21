@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Sep 14 10:16:19 2022
+Collection of functions which operate with spatial/georeferenced data
 
 @author: paolo
 """
-
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -52,9 +51,9 @@ def transf_CRS(x, y, frm, to, series = False, **kwargs):
     Returns
     -------
     out : tuple
-        out[0] contains the LATITUDE
-        out[1] contains the LONGITUDE
-
+        When transforming to WGS84:
+         - out[0] contains the LATITUDE
+         - out[1] contains the LONGITUDE
     """
     if series:
         x = x.reset_index(drop = True).to_numpy()
@@ -62,7 +61,6 @@ def transf_CRS(x, y, frm, to, series = False, **kwargs):
     trs = pyproj.Transformer.from_crs(frm, to)
     out = trs.transform(x, y, **kwargs)
     return out
-    
 
 # %% Find nearest things
 
@@ -81,78 +79,71 @@ def find_nearestrastercell(raster, point):
         
     pass
 
-def find_nearestpoint(db1, db2, id1 = 'CODE', coord1 = ['lon', 'lat'],
+def find_nearestpoint(df1, df2, id1 = 'CODE', coord1 = ['lon', 'lat'],
                        id2 = 'CODE', coord2 = ['lon', 'lat'],
                        reset_index = False, change_CRS = False, ellps = 'WGS84',
                        **kwargs):
     """
-    Obtains the nearest point from db2 relative to each point in db1. Returns
+    Obtains the nearest point from df2 relative to each point in df1. Returns
     a dataframe gatheirng this information
 
     Parameters
     ----------
-    db1 : TYPE
-        DESCRIPTION.
-    db2 : TYPE
-        DESCRIPTION.
-    id1 : TYPE, optional
-        DESCRIPTION. The default is 'CODE'.
-    coord1 : TYPE, optional
-        DESCRIPTION. The default is ['lon', 'lat'].
-    id2 : TYPE, optional
-        DESCRIPTION. The default is 'CODE'.
-    coord2 : TYPE, optional
-        DESCRIPTION. The default is ['lon', 'lat'].
-    reset_index : TYPE, optional
-        DESCRIPTION. The default is False.
-    change_CRS : TYPE, optional
-        DESCRIPTION. The default is False.
-    ellps : TYPE, optional
-        DESCRIPTION. The default is 'WGS84'.
+    df1 : pandas.DataFrame
+        Dataframe containing the id and coordinates of the points to be
+        associated to the nearest point present in df2.
+    df2 : pandas.DataFrame
+        Dataframe containing the id and coordinates of the points in which to
+        search for the nearest point to each one from df1.
+    id1, id2 : str, optional
+        Column label of the dataframes' column containing the points' ids.
+        The default is 'CODE'.
+    coord1, coord2 : list of str, optional
+        Column labels of the dataframes' column containing the points'
+        coordinates. The default is ['lon', 'lat'].
+    reset_index : bool, optional
+        True: reset the index of the dataframes provided (only inside the function).
+        Useful if you have the ids in the df index but you don't want to change
+        the original df. The default is False.
+    change_CRS : bool, optional
+        True: changes the CRS of the coordinates. Needs also informations
+        about the CRS transformation, to be provided as **kwargs.
+        The default is False.
+    ellps : str, optional
+        Ellipsoid definition to be passed to pyproj.Geod. The default is 'WGS84'.
     **kwargs : TYPE
-        DESCRIPTION.
+        Arguments compatible with gd.transf_CRS() and pyproj.Transformer.transform.
 
     Returns
     -------
-    dbout : TYPE
-        DESCRIPTION.
-
+    dbout : pandas.DataFrame
+        Dataframe containing the ids and coordinates of all the points in df1
+        along with the ids and coordinates of the nearest point from df2. The
+        last column ('dist') contains the distance between the points, in meters.
     """
-    
     if reset_index:
-        db1 = db1.copy().reset_index()
-        db2 = db2.copy().reset_index()
+        df1 = df1.copy().reset_index()
+        df2 = df2.copy().reset_index()
     if change_CRS:
-        out = transf_CRS(db1.loc[:, coord1[0]], db1.loc[:, coord1[1]], series = True, **kwargs)
-        db1.loc[:, coord1[0]], db1.loc[:, coord1[1]] = out[1], out[0]
-        out = transf_CRS(db2.loc[:, coord2[0]], db2.loc[:, coord2[0]], series = True, **kwargs)
-        db2.loc[:, coord2[0]], db2.loc[:, coord2[1]] = out[1], out[0]
+        out = transf_CRS(df1.loc[:, coord1[0]], df1.loc[:, coord1[1]], series = True, **kwargs)
+        df1.loc[:, coord1[0]], df1.loc[:, coord1[1]] = out[1], out[0]
+        out = transf_CRS(df2.loc[:, coord2[0]], df2.loc[:, coord2[0]], series = True, **kwargs)
+        df2.loc[:, coord2[0]], df2.loc[:, coord2[1]] = out[1], out[0]
     
-    dbout = db1.loc[:, [id1, coord1[0], coord1[1]]].copy()
+    dbout = df1.loc[:, [id1, coord1[0], coord1[1]]].copy()
     nrstcol = [f'{id2}_nrst', f'{coord2[0]}_nrst', f'{coord2[1]}_nrst']
     dbout[nrstcol[0]], dbout[nrstcol[1]], dbout[nrstcol[2]] = [np.nan, np.nan, np.nan]
     dbout['dist'] = np.nan
     geod = pyproj.Geod(ellps = ellps)#, **kwargs)
     
-    for p in db1.loc[:, [id1, coord1[0], coord1[1]]].iterrows():
+    for p in df1.loc[:, [id1, coord1[0], coord1[1]]].iterrows():
         dist = []
-        for a in db2.loc[:, [id2, coord2[0], coord2[1]]].iterrows():
+        for a in df2.loc[:, [id2, coord2[0], coord2[1]]].iterrows():
             _, _, d = geod.inv(p[1][coord1[0]], p[1][coord1[1]], a[1][coord2[0]], a[1][coord2[1]])
             dist.append(d) #d: distance in meters
         idx = dist.index(min(dist))        
         lst = iter([id2, coord2[0], coord2[1]])
         for col in nrstcol:
-            dbout.loc[dbout[id1] == p[1][id1], col] = db2.iloc[idx, :][next(lst)]
+            dbout.loc[dbout[id1] == p[1][id1], col] = df2.iloc[idx, :][next(lst)]
         dbout.loc[dbout[id1] == p[1][id1], 'dist'] = dist[idx]
     return dbout
-
-
-
-
-
-
-
-
-
-
-

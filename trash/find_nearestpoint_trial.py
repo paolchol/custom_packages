@@ -5,26 +5,24 @@ import geodata as gd
 import numpy as np
 import pandas as pd
 
+meta2022 = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv', index_col = 'CODICE')
+meta2003 = pd.read_csv('data/PTUA2003/meta_sup_PTUA2003_TICINOADDA.csv', index_col = 'CODICE')
+#meta2022 e meta2003 sono in due sistemi di coordinate differenti
+#meta2022: UTM Z32N - EPSG:32632
+#meta2003: Monte Mario / Italy zone 1 - EPSG:3003
 
+meta2003 = meta2003[(meta2003['x'].notna()) & (meta2003['y'].notna())].copy()
+out = gd.transf_CRS(meta2003.loc[:, 'x'], meta2003.loc[:, 'y'], 'EPSG:3003', 'EPSG:4326', series = True)
+meta2003['lat'], meta2003['lon'] = out[0], out[1]
 
-meta = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv', index_col = 'CODICE')
-metaold = pd.read_csv('data/PTUA2003/meta_PTUA2003_TICINOADDA.csv', index_col = 'CODICE')
-#meta e metaold sono in due sistemi di coordinate differenti
-#meta: UTM Z32N - EPSG:32632
-#metaold: Monte Mario / Italy zone 1 - EPSG:3003
-
-metaold = metaold[(metaold['x'].notna()) & (metaold['y'].notna())].copy()
-out = gd.transf_CRS(metaold.loc[:, 'x'], metaold.loc[:, 'y'], 'EPSG:3003', 'EPSG:4326', series = True)
-metaold['lat'], metaold['lon'] = out[0], out[1]
-
-meta = meta[(meta['X_WGS84'].notna()) & (meta['Y_WGS84'].notna())].copy()
-out = gd.transf_CRS(meta.loc[:, 'X_WGS84'], meta.loc[:, 'Y_WGS84'], 'EPSG:32632', 'EPSG:4326', series = True)
-meta['lat'], meta['lon'] = out[0], out[1]
+meta2022 = meta2022[(meta2022['X_WGS84'].notna()) & (meta2022['Y_WGS84'].notna())].copy()
+out = gd.transf_CRS(meta2022.loc[:, 'X_WGS84'], meta2022.loc[:, 'Y_WGS84'], 'EPSG:32632', 'EPSG:4326', series = True)
+meta2022['lat'], meta2022['lon'] = out[0], out[1]
 
 import time
 
 start = time.time()
-db_nrst = gd.find_nearestpoint(metaold, meta,
+db_nrst = gd.find_nearestpoint(meta2003, meta2022,
                      id1 = 'CODICE', coord1 = ['lon', 'lat'],
                      id2 = 'CODICE', coord2 = ['lon', 'lat'],
                      reset_index = True)
@@ -38,4 +36,8 @@ sum(db_nrst['dist'] < 100) #33 points linkable
 exp = db_nrst[db_nrst['dist'] < 100]
 exp.to_csv('./trash/points_100dist.csv', index = False)
 
+exp = db_nrst[db_nrst['dist'] < 500]
+exp.to_csv('./trash/points_500dist.csv', index = False)
+
 #Funziona molto bene!
+#Le distanze sono calcolate perfettamente (controllo effettuato su Earth e QGIS)

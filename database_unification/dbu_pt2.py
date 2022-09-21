@@ -14,43 +14,31 @@ Associazione dei piezometri del PTUA2003 a quelli disponibili al PTUA 2022
 import pandas as pd
 import dataviz as dv
 import datawrangling as dw
+import geodata as gd
 
 # %% Load the metadata
 
 #Metadata dei dati usati nel PTUA 2022
-meta = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv', index_col = 'CODICE')
+meta2022 = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv', index_col = 'CODICE')
 
 #Metadata dei dati usati nel PTUA 2003
-metaold = pd.read_csv('data/PTUA2003/meta_PTUA2003_TICINOADDA.csv', index_col = 'CODICE')
+meta2003 = pd.read_csv('data/PTUA2003/meta_sup_PTUA2003_TICINOADDA.csv', index_col = 'CODICE')
 
 #Database incrociato: contiene associazione tra codici SIF e PP
-code_db = pd.read_csv('data/general/code_db_SIF_PP.csv')
-
-# %% Analisi sui codici
-
-#Codici PTUA2003 presenti nel database incrociato
-old1 = metaold.loc[metaold.index.isin(code_db['CODICE_SIF']), :]
-old2 = metaold.loc[metaold.index.isin(code_db['CODICE_PP']), :]
-#Codici PTUA2003 presenti nel database PTUA2022
-old3 = metaold.loc[metaold.index.isin(meta.index), :]
-
-#Codici PP di old1 presenti nel database PTUA 2022
-pp = code_db.loc[code_db['CODICE_SIF'].isin(old1.index), 'CODICE_PP']
-vis = meta.loc[meta.index.isin(pp), :]
-#le serie storiche dei piezometri in vis possono essere associate direttamente
+code_db = pd.read_csv('data/general/codes_SIF_PP.csv')
 
 # %% Associazione di metadata e serie storiche dei piezometri identificati
 
 #Associazione codice PP a metadata PTUA2003, usando codice SIF
-idx = metaold.index.isin(code_db['CODICE_SIF'])
-sifpp = code_db.loc[code_db['CODICE_SIF'].isin(metaold.index), ['CODICE_SIF', 'CODICE_PP']]
+idx = meta2003.index.isin(code_db['CODICE_SIF'])
+sifpp = code_db.loc[code_db['CODICE_SIF'].isin(meta2003.index), ['CODICE_SIF', 'CODICE_PP']]
 sifpp.set_index('CODICE_SIF', inplace = True)
-metaold_j = pd.merge(metaold, sifpp, how = 'left', left_index = True, right_index = True)
-metaold_j.reset_index(inplace = True)
-metaold_j.rename(columns = {'CODICE': 'CODICE_SIF'}, inplace = True)
-metaold_j.set_index('CODICE_PP', inplace = True)
+meta2003_j = pd.merge(meta2003, sifpp, how = 'left', left_index = True, right_index = True)
+meta2003_j.reset_index(inplace = True)
+meta2003_j.rename(columns = {'CODICE': 'CODICE_SIF'}, inplace = True)
+meta2003_j.set_index('CODICE_PP', inplace = True)
 #Associazione metadata PTUA2003 a metadata PTUA2022, usando codice PP
-metamerged = pd.merge(meta, metaold_j['CODICE_SIF'], how = 'left', left_index = True, right_index = True)
+metamerged = pd.merge(meta2022, meta2003_j['CODICE_SIF'], how = 'left', left_index = True, right_index = True)
 metamerged.index.names = ['CODICE']
 #Aggiunta della serie storica PTUA2003 alla serie storica PTUA2022 per i piezometri
 # individuati con doppio codice
@@ -62,13 +50,35 @@ head2003.index = pd.DatetimeIndex(head2003.index)
 codes = metamerged.loc[metamerged['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_SIF'].dropna()
 headmerge = dw.mergehead(head2022, head2003, codes)
 
-dv.interactive_TS_visualization(headmerge, 'data', 'livello [m.s.l.m]', file = 'plot/dbu/merged_0805_TS_IT03GWBISSAPTA.html')
-# %% Find the nearest piezometer of meta to the piezometers of metaold
+# dv.interactive_TS_visualization(headmerge, 'data', 'livello [m.s.l.m]', file = 'plot/dbu/merged_0805_TS_IT03GWBISSAPTA.html')
+
+# %% Find the nearest piezometer of meta to the piezometers of meta2003
+
+meta2003 = meta2003[(meta2003['x'].notna()) & (meta2003['y'].notna())].copy()
+out = gd.transf_CRS(meta2003.loc[:, 'x'], meta2003.loc[:, 'y'], 'EPSG:3003', 'EPSG:4326', series = True)
+meta2003['lat'], meta2003['lon'] = out[0], out[1]
+
+meta2022 = meta2022[(meta2022['X_WGS84'].notna()) & (meta2022['Y_WGS84'].notna())].copy()
+out = gd.transf_CRS(meta2022.loc[:, 'X_WGS84'], meta2022.loc[:, 'Y_WGS84'], 'EPSG:32632', 'EPSG:4326', series = True)
+meta2022['lat'], meta2022['lon'] = out[0], out[1]
+
+db_nrst = gd.find_nearestpoint(meta2003, meta2022,
+                     id1 = 'CODICE', coord1 = ['lon', 'lat'],
+                     id2 = 'CODICE', coord2 = ['lon', 'lat'],
+                     reset_index = True)
+
+idx = db_nrst.loc[db_nrst['dist'] < 100, 'CODICE']
+vis = meta2003.loc[idx, :]
+vis['dist'] = db_nrst.loc[db_nrst['CODICE'].isin(idx), 'dist'].values
+
+# %% Validate the results
 
 #Check: "validare" usando i piezometri per cui si sanno già i doppi codici
-#modificare da.find_nearest_point()
-#Escludere piezometri che in metaold hanno FALDA come "profonda" e capire a cosa
+
+#Escludere piezometri che in meta2003 hanno FALDA come "profonda" e capire a cosa
 #corrispondono i numeri
+
+
 
 # %% Altre operazioni
 

@@ -54,6 +54,10 @@ def mergehead(left, right, codes):
     out = joincolumns(pd.merge(left, y, how = 'outer', left_index = True, right_index = True))
     return(out)
 
+def mergemeta(left, right):
+    
+    pass
+
 def remove_wcond(df, cond):
     """
     Removes rows/data from a dataframe by applying a specified condition

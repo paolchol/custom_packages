@@ -149,8 +149,8 @@ ts.columns = [f'0{code}' if (len(code)>6) and (code[0] != 'P') else code for cod
 
 # %% Salvataggio dei dataset ottenuti
 
-meta.to_csv('data/PTUA2003/meta_PTUA2003_TICINOADDA.csv')
-ts.to_csv('data/PTUA2003/head_PTUA2003_TICINOADDA.csv')
+meta.to_csv('data/PTUA2003/meta_PTUA2003_TICINOADDA_unfiltered.csv')
+ts.to_csv('data/PTUA2003/head_PTUA2003_TICINOADDA_unfiltered.csv')
 
 # %% Operazioni sui dataset completi
 
@@ -164,10 +164,9 @@ idx = meta.loc[:, 'z'].isna()
 meta = meta.drop(meta.index[idx])
 ts = ts.loc[:, ts.columns.isin(meta.index)]
 
-#Senza modificare meta
-#Rimozione piezometri senza coordinate
-idx = np.invert(meta.loc[:, ['x', 'y']].isna().apply(all, 1))
-ts = ts[[col for col in meta.loc[idx, :].index if (col in ts.columns)]]
-#Rimozione piezometri senza quota
-idx = np.invert(meta.loc[:, 'z'].isna())
-ts = ts[[col for col in meta.loc[idx, :].index if (col in ts.columns)]]
+#Separazione dei metadati in falda superficiale e profonda
+meta_sup = meta.loc[meta['FALDA'].isin(['1', np.nan, 'SUPERF.', 'SUPERF. (acquifero locale)']), :]
+meta_otr = meta.loc[np.invert(meta.index.isin(meta_sup.index)), :]
+
+meta_sup.to_csv('data/PTUA2003/meta_sup_PTUA2003_TICINOADDA.csv')
+meta_otr.to_csv('data/PTUA2003/meta_other_PTUA2003_TICINOADDA.csv')
