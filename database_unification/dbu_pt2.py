@@ -61,9 +61,12 @@ sifpp.set_index('CODICE_SIF', inplace = True)
 
 test = dw.mergemeta(meta2022, meta2003, link = sifpp,
                     firstmerge = dict(left_index = True, right_index = True),
-                    secondmerge = dict(left_index = True, right_on = 'CODICE_PP'))
-
-
+                    secondmerge = dict(left_index = True, right_on = 'CODICE_PP',
+                                       suffixes = [None, "_PTUA2003"]))
+test.rename(columns = {'CODICE_PP': 'CODICE', 'index': 'CODICE_SIF'}, inplace = True)
+#mettere codice come index
+test.drop(columns = ['SETTORE', 'STRAT.', 'PROVINCIA_PTUA2003', 'x', 'y', 'COMUNE_PTUA2003'], inplace = True)
+#riordinare le colonne
 
 # %% Find the nearest piezometer of meta to the piezometers of meta2003
 

@@ -54,11 +54,40 @@ def mergehead(left, right, codes):
     out = joincolumns(pd.merge(left, y, how = 'outer', left_index = True, right_index = True))
     return(out)
 
-def mergemeta(left, right, link = None, *, firstmerge: dict, secondmerge: dict):
+def mergemeta(left, right, link = None, codename = None,
+              *, firstmerge: dict, secondmerge: dict):
+    """
+    
+
+    Parameters
+    ----------
+    left : TYPE
+        DESCRIPTION.
+    right : TYPE
+        DESCRIPTION.
+    link : TYPE, optional
+        DESCRIPTION. The default is None.
+    rearrange : TYPE, optional
+        DESCRIPTION. The default is False.
+    codename : TYPE, optional
+        DESCRIPTION. The default is None.
+    * : TYPE
+        DESCRIPTION.
+    firstmerge : dict
+        DESCRIPTION.
+    secondmerge : dict
+        DESCRIPTION.
+
+    Returns
+    -------
+    out : TYPE
+        DESCRIPTION.
+
+    """
     if link is not None:
         right = pd.merge(right, link, how = 'inner', **firstmerge)
     out = pd.merge(left, right, how = 'left', **secondmerge)
-    #sistemare come viene ridefinito l'index
+    out.reset_index(inplace = True)
     return out
 
 def remove_wcond(df, cond):
