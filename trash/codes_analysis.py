@@ -44,12 +44,4 @@ meta2003_j.set_index('CODICE_PP', inplace = True)
 #Associazione metadata PTUA2003 a metadata PTUA2022, usando codice PP
 metamerged = pd.merge(meta2022, meta2003_j['CODICE_SIF'], how = 'left', left_index = True, right_index = True)
 metamerged.index.names = ['CODICE']
-#Aggiunta della serie storica PTUA2003 alla serie storica PTUA2022 per i piezometri
-# individuati con doppio codice
-head2022 = pd.read_csv('data/PTUA2022/head_IT03GWBISSAPTA.csv', index_col='DATA')
-head2003 = pd.read_csv('data/PTUA2003/head_PTUA2003_TICINOADDA.csv', index_col='DATA')
-head2022.index = pd.DatetimeIndex(head2022.index)
-head2003.index = pd.DatetimeIndex(head2003.index)
 
-codes = metamerged.loc[metamerged['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_SIF'].dropna()
-headmerge = dw.mergehead(head2022, head2003, codes)

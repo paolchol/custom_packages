@@ -39,20 +39,10 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
         newcol = col.split('_')[0]
         pos = df.loc[:, col].isna()
         df.loc[pos, col] = df.loc[pos, f'{newcol}{fillwith}']
-        df.drop(f'{newcol}{fillwith}', axis = 1, inplace = True)
+        df.drop(columns = f'{newcol}{fillwith}', inplace = True)
         df.rename(columns = {f'{col}': f'{newcol}'}, inplace = True)
-    if col_order: df = df[col_order]
+    if col_order is not None: df = df[col_order]
     return df
-
-def mergehead(left, right, codes):
-    """
-    Function to merge two time series dataframes based on the codes each piezometer
-    has in each 
-    """
-    y = right[codes]
-    y.columns = codes.index
-    out = joincolumns(pd.merge(left, y, how = 'outer', left_index = True, right_index = True))
-    return(out)
 
 def mergemeta(left, right, link = None, codename = None,
               *, firstmerge: dict, secondmerge: dict):
@@ -88,6 +78,36 @@ def mergemeta(left, right, link = None, codename = None,
         right = pd.merge(right, link, how = 'inner', **firstmerge)
     out = pd.merge(left, right, how = 'left', **secondmerge)
     out.reset_index(inplace = True)
+    return out
+
+def mergets(left, right, codes):
+    """
+    Function to merge two time series dataframes based on associated codes
+    provided.
+    The merged dataframe is passed to joincolumns to join the duplicated
+    columns that pandas.merge will produce.
+
+    Parameters
+    ----------
+    left : pandas.DataFrame
+        Time series dataframe to merge.
+    right : pandas.DataFrame
+        Time series dataframe to merge.
+    codes : pandas.Series
+        Codes with 
+        Series with:
+            values: codes associated to the right df
+            index: codes associated to the left df, to perform the merge.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
+    y = right[codes]
+    y.columns = codes.index
+    out = joincolumns(pd.merge(left, y, how = 'outer', left_index = True, right_index = True))
     return out
 
 def remove_wcond(df, cond):

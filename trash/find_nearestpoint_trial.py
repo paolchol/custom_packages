@@ -4,6 +4,7 @@ import datawrangling as dw
 import geodata as gd
 import numpy as np
 import pandas as pd
+import time
 
 meta2022 = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv', index_col = 'CODICE')
 meta2003 = pd.read_csv('data/PTUA2003/meta_sup_PTUA2003_TICINOADDA.csv', index_col = 'CODICE')
@@ -18,8 +19,6 @@ meta2003['lat'], meta2003['lon'] = out[0], out[1]
 meta2022 = meta2022[(meta2022['X_WGS84'].notna()) & (meta2022['Y_WGS84'].notna())].copy()
 out = gd.transf_CRS(meta2022.loc[:, 'X_WGS84'], meta2022.loc[:, 'Y_WGS84'], 'EPSG:32632', 'EPSG:4326', series = True)
 meta2022['lat'], meta2022['lon'] = out[0], out[1]
-
-import time
 
 start = time.time()
 db_nrst = gd.find_nearestpoint(meta2003, meta2022,
@@ -41,3 +40,14 @@ exp.to_csv('./trash/points_500dist.csv', index = False)
 
 #Funziona molto bene!
 #Le distanze sono calcolate perfettamente (controllo effettuato su Earth e QGIS)
+
+# %% Validate the spatial analysis results
+idx = db_nrst.loc[db_nrst['dist'] < 100, 'CODICE']
+vis = meta2003.loc[idx, :]
+vis['dist'] = db_nrst.loc[db_nrst['CODICE'].isin(idx), 'dist'].values
+
+
+#Check: "validare" l procedura spaziale usando i piezometri per cui si sanno già i doppi codici
+
+#Escludere piezometri che in meta2003 hanno FALDA come "profonda" e capire a cosa
+#corrispondono i numeri

@@ -163,6 +163,18 @@ ts = ts.loc[:, ts.columns.isin(meta.index)]
 idx = meta.loc[:, 'z'].isna()
 meta = meta.drop(meta.index[idx])
 ts = ts.loc[:, ts.columns.isin(meta.index)]
+#Ricerca piezometri con coordinate duplicate
+dup1 = meta1.loc[meta1.duplicated(['x', 'y'], keep = False), :]
+dup2 = meta2.loc[meta2.duplicated(['x', 'y'], keep = False), :]
+dup = meta.loc[meta.duplicated(['x', 'y'], keep = False), :]
+#Rimuovi duplicati
+keep = meta.loc[meta.duplicated(['x', 'y']), :]
+drop = meta.loc[meta.duplicated(['x', 'y'], keep = 'last'), :]
+keep.loc[keep['COMUNE'].isin(['MARIANO COMENSE', 'MARCALLO CON CASONE']), 'FALDA'] = '3'
+keep = keep.loc[np.invert(keep.duplicated(['x', 'y'])), :]
+meta.loc[keep.index, 'FALDA'] = keep['FALDA']
+meta.drop(drop.index, inplace = True)
+sum(meta.index.duplicated())
 
 #Separazione dei metadati in falda superficiale e profonda
 meta_sup = meta.loc[meta['FALDA'].isin(['1', np.nan, 'SUPERF.', 'SUPERF. (acquifero locale)']), :]

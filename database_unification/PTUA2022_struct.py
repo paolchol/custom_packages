@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Starting from the available datasets, construction of 
-a database as defined in #link to draw.io
+Rearrangement of the PTUA2022 dataset in a more easily usable dataset
+
+Creation of a time series files structured as:
+    - columns: piezometers and wells, identified by their code
+    - rows: date (monthly)
 
 author: paolo
 """

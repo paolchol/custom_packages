@@ -13,8 +13,18 @@ head = pd.read_csv('data/PTUA2003/head_PTUA2003_TICINOADDA_unfiltered.csv', inde
 
 #Senza modificare meta
 #Rimozione piezometri senza coordinate
+
+# meta2003 = meta2003[sum(meta2003['x'].isna()) & (meta2003['y'].notna())].copy()
+
 idx = np.invert(meta.loc[:, ['x', 'y']].isna().apply(all, 1))
 head = head[[col for col in meta.loc[idx, :].index if (col in head.columns)]]
 #Rimozione piezometri senza quota
 idx = np.invert(meta.loc[:, 'z'].isna())
 head = head[[col for col in meta.loc[idx, :].index if (col in head.columns)]]
+
+# %% Altre operazioni
+
+#Visualizzazione dei piezometri associabili direttamente ai dati PTUA2022
+import numpy as np
+extr = metamerged.loc[np.invert(metamerged['CODICE_SIF'].isna()), :]
+extr.to_csv('trash/export/piezo_accoppiati.csv')
