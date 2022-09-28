@@ -79,11 +79,25 @@ meta.rename(columns = {'CODICE_link': 'CODICE', 'index': 'CODICE_PTUA2003'}, inp
 meta.set_index('CODICE', inplace = True)
 meta.drop(columns = ['SETTORE', 'STRAT.', 'PROVINCIA_PTUA2003', 'x', 'y', 'COMUNE_PTUA2003'], inplace = True)
 meta.rename(columns = {'z': 'z_PTUA2003', 'INFO': 'INFO_PTUA2003'}, inplace = True)
-cols = meta.columns.to_list()
-cols = cols[1:20] + [cols[0]] + cols[20:]
-meta = meta[cols]
 
-meta.to_csv('data/results/db-unification/meta_PTUA2022PTUA2003.csv')
+#Split SIF code from the other PTUA2003 codes
+codePTUA = []
+codeSIF = []
+for code in meta['CODICE_PTUA2003']:
+    if isinstance(code, str):
+        if code[0:3] == '015':
+            codeSIF += [code]
+            codePTUA += [np.nan]
+        else:
+            codeSIF += [np.nan]
+            codePTUA += [code]
+    else:
+        codePTUA += [np.nan]
+        codeSIF += [np.nan]
+meta['CODICE_PTUA2003'] = codePTUA
+meta.insert(0, column = 'CODICE_SIF', value = codeSIF)
+
+meta.to_csv('data/results/db-unification/meta_DBU-1.csv')
 
 # %% Merge the time series
 
@@ -93,8 +107,6 @@ head2022 = pd.read_csv('data/PTUA2022/head_IT03GWBISSAPTA.csv', index_col='DATA'
 head2003 = pd.read_csv('data/PTUA2003/head_PTUA2003_TICINOADDA_unfiltered.csv', index_col='DATA')
 head2022.index = pd.DatetimeIndex(head2022.index)
 head2003.index = pd.DatetimeIndex(head2003.index)
-
-meta = pd.read_csv('data/results/db-unification/meta_PTUA2022PTUA2003.csv', index_col = 'CODICE')
 
 codes = meta.loc[meta['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_PTUA2003'].dropna()
 sum(codes.index.isin(head2022.columns))
@@ -109,4 +121,4 @@ meta.loc['PO0151080U0002', :]
 meta.loc['PO0151810U0001', :]
 #z_PTUA2003 e QUOTA_PC_S sono differenti: da tenere presente in fase di data processing!
 
-headmerge.to_csv('data/results/db-unification/head_PTUA2022PTUA2003.csv')
+headmerge.to_csv('data/results/db-unification/head_DBU-1.csv')

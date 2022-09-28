@@ -44,3 +44,8 @@ meta_otr.to_csv('data/PTUA2003/meta_other_PTUA2003_TICINOADDA.csv')
 import numpy as np
 extr = metamerged.loc[np.invert(metamerged['CODICE_SIF'].isna()), :]
 extr.to_csv('trash/export/piezo_accoppiati.csv')
+
+#sposta colonna codice
+cols = meta.columns.to_list()
+cols = cols[1:20] + [cols[0]] + cols[20:]
+meta = meta[cols]
