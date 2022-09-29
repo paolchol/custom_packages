@@ -8,6 +8,7 @@ For data wrangling I mean:
 @author: paolo
 """
 
+import numpy as np
 import pandas as pd
 
 def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
@@ -128,3 +129,51 @@ def remove_wcond(df, cond):
 
     """
     return df[cond]
+
+
+def create_datecol(df, d = None, year = None, month = None):
+    df = df.copy()
+    df[month] = [d[m] for m in df[month]]
+    datecol = [f"{x}-{y}-1" for x, y in zip(df[year], df[month])]
+    datecol = pd.to_datetime(datecol, format = '%Y-%m-%d')
+    return datecol
+
+
+class stackedDF():
+    
+    def __init__(self, df, yearcol, d):
+        self.df = df
+        self.y = yearcol
+        # self.m = monthcol
+        self.d = d
+        
+    def create_datecol(self, s, month):
+        df = s.copy()
+        df[month] = [self.d[m] for m in df[month]]
+        datecol = [f"{x}-{y}-1" for x, y in zip(df[self.y], df[month])]
+        datecol = pd.to_datetime(datecol, format = '%Y-%m-%d')
+        return datecol
+    
+    def rearrange(self):
+        idx = pd.date_range(f"{min(self.df[self.y])}-01-01", f"{max(self.df[self.y])}-12-01", freq = 'MS')
+        tool = pd.DataFrame(np.zeros(len(idx)), index = idx)
+        tool.rename(columns = {0: 'tool'}, inplace = True)
+                
+        for code in self.df.index:
+            s = self.df.loc[code, :].set_index(self.y).stack(dropna = False)
+            s = s.reset_index()
+            s['datecol'] = self.create_datecol(s, month = 'level_1')
+            s.drop(columns = [self.y, 'level_1'], inplace = True)
+            s.sort_values('datecol', inplace = True)
+            s.rename(columns = {0: code}, inplace = True)
+            s.set_index('datecol', inplace = True)
+            
+            tool = pd.merge(tool, s, left_index = True, right_index = True, how = 'left')
+            
+            return tool
+
+            
+            
+    pass
+
+

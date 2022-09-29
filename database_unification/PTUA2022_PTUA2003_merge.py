@@ -85,7 +85,7 @@ codePTUA = []
 codeSIF = []
 for code in meta['CODICE_PTUA2003']:
     if isinstance(code, str):
-        if code[0:3] == '015':
+        if (code[0:3] == '015') | (code[0:3] == '098'):
             codeSIF += [code]
             codePTUA += [np.nan]
         else:
