@@ -51,7 +51,7 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
 def mergemeta(left, right, link = None, codename = None,
               *, firstmerge: dict, secondmerge: dict):
     """
-    
+    Merge two metadata databases
 
     Parameters
     ----------
@@ -131,14 +131,12 @@ def remove_wcond(df, cond):
     """
     return df[cond]
 
-
 def create_datecol(df, d = None, year = None, month = None):
     df = df.copy()
     df[month] = [d[m] for m in df[month]]
     datecol = [f"{x}-{y}-1" for x, y in zip(df[year], df[month])]
     datecol = pd.to_datetime(datecol, format = '%Y-%m-%d')
     return datecol
-
 
 class stackedDF():
     

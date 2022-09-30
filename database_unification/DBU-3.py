@@ -1,30 +1,35 @@
+# -*- coding: utf-8 -*-
 """
 DBU: DataBase Unification
-Unificazione del dataset CAP con il database unificato DBU-1
+Unificazione del dataset Idroscalo2005 con il database unificato DBU-3
 
 Le operazioni necessarie per ottenere meta e head sono state svolte in
-CAP_struct.py
+Idroscalo2005_struct.py
 
 @author: paolo
 """
 
 # %% Setup
 
+import dataviz as dv
 import datawrangling as dw
 import geodata as gd
 import pandas as pd
 import numpy as np
 
-# %% Load CAP meta and data
+# %% Load Idroscalo2005 meta and data
 
-meta = pd.read_csv('data/CAP/meta_CAP.csv', index_col = 'CODICE')
-head = pd.read_csv('data/CAP/head_CAP.csv', index_col = 'DATA')
+meta = pd.read_csv('data/Idroscalo2005/meta_Idroscalo2005.csv', index_col = 'CODICE')
+head = pd.read_csv('data/Idroscalo2005/head_Idroscalo2005.csv', index_col = 'DATA')
+
+meta.index = [f"0{idx}" for idx in meta.index]
+meta.index.names = ['CODICE']
 head.index = pd.DatetimeIndex(head.index)
 
 # %% Identify couples of codes
 
 codes_SIF_PP = pd.read_csv('data/general/codes_SIF_PP.csv')
-metaDBU = pd.read_csv('data/results/db-unification/meta_DBU-1.csv', index_col = 'CODICE')
+metaDBU = pd.read_csv('data/results/db-unification/meta_DBU-2.csv', index_col = 'CODICE')
 metaDBU['CODICE_SIF'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in metaDBU['CODICE_SIF']]
 
 #Search by code
@@ -34,7 +39,7 @@ sifpp.set_index('CODICE_SIF', inplace = True)
 
 #Search by position
 #Transform meta's coordinates: from Monte Mario to WGS84
-meta['lat'], meta['lon'] = gd.transf_CRS(meta.loc[:, 'X'], meta.loc[:, 'Y'], 'EPSG:3003', 'EPSG:4326', series = True)
+meta['lat'], meta['lon'] = gd.transf_CRS(meta.loc[:, 'x'], meta.loc[:, 'y'], 'EPSG:3003', 'EPSG:4326', series = True)
 db_nrst = gd.find_nearestpoint(meta, metaDBU,
                      id1 = 'CODICE', coord1 = ['lon', 'lat'],
                      id2 = 'CODICE', coord2 = ['lon', 'lat'],
@@ -52,32 +57,36 @@ codelst.set_index('CODICE_SIF', inplace = True)
 
 # %% Merge metadata
 
-sum(codelst.isin(metaDBU.index).values)
+print(sum(metaDBU['CODICE_SIF'].isin(meta.index)))
+print(sum(codelst.isin(metaDBU.index).values)[0])
 metamerge = dw.mergemeta(metaDBU, meta, link = codelst,
                     firstmerge = dict(left_index = True, right_index = True),
                     secondmerge = dict(left_index = True, right_on = 'CODICE_link',
-                                       suffixes = [None, "_CAP"]))
-metamerge.rename(columns = {'CODICE_link': 'CODICE'}, inplace = True)
+                                       suffixes = [None, "_I2005"]))
+metamerge.rename(columns = {'CODICE_link': 'CODICE', 'index': 'CODICE_SIF_I2005'}, inplace = True)
 metamerge.set_index('CODICE', inplace = True)
-metamerge.drop(columns = ['COMUNE_CAP', 'X', 'Y', 'lat_CAP', 'lon_CAP'], inplace = True)
-metamerge.insert(23, 'z_CAP', metamerge['Z'])
-metamerge.drop(columns = 'Z', inplace = True)
 
-# metamerge['CODICE_SIF'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in metamerge['CODICE_SIF']]
-metamerge.rename(columns = {'CODICE_SIF': 'CODICE_SIF_keep', 'index': 'CODICE_SIF_remove'}, inplace = True)
-metamerge = dw.joincolumns(metamerge, '_keep', '_remove')
+metamerge.drop(columns = ['x', 'y', 'lat_I2005', 'lon_I2005'], inplace = True)
+metamerge.insert(24, 'z_I2005', metamerge['z'])
+metamerge.drop(columns = 'z', inplace = True)
+metamerge.rename(columns = {'ORIGINE': 'ORIGINE_dbu', 'CODICE_SIF': 'CODICE_SIF_dbu'}, inplace = True)
+metamerge = dw.joincolumns(metamerge, '_dbu', '_I2005')
 
-metamerge.to_csv('data/results/db-unification/meta_DBU-2.csv')
+metamerge.to_csv('data/results/db-unification/meta_DBU-3.csv')
 
-# %% Merge the time series
+# %% Merge time series
 
-headDBU = pd.read_csv('data/results/db-unification/head_DBU-1.csv', index_col='DATA')
+headDBU = pd.read_csv('data/results/db-unification/head_DBU-2.csv', index_col='DATA')
 headDBU.index = pd.DatetimeIndex(headDBU.index)
 
 idx = (metamerge['CODICE_SIF'].isin(meta.index)) & (metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA')
 codes = metamerge.loc[idx, 'CODICE_SIF']
-#no codes from CAP are present in IT03GWBISSAPTA
-#no need to perform a merge in this condition
-#head_DBU-1 is just saved as head_DBU-2
+headmerge = dw.mergets(headDBU, head, codes)
 
-headDBU.to_csv('data/results/db-unification/head_DBU-2.csv')
+#Visualize the result
+vis = head[codes]
+vismerge = headmerge[codes.index]
+visdbu = headDBU[codes.index]
+dv.interactive_TS_visualization(vismerge, file = 'plot/dbu/added_ts_DBU-3.html')
+
+headmerge.to_csv('data/results/db-unification/head_DBU-3.csv')
