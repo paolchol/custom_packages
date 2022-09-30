@@ -37,7 +37,10 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     """
     idx = [keep in col for col in df.columns]
     for col in df.columns[idx]:
-        newcol = col.split('_')[0]
+        if len(col.split('_')) > 2:
+            newcol = ('_').join(col.split('_')[0:-1])
+        else:
+            newcol = col.split('_')[0]
         pos = df.loc[:, col].isna()
         df.loc[pos, col] = df.loc[pos, f'{newcol}{fillwith}']
         df.drop(columns = f'{newcol}{fillwith}', inplace = True)
@@ -102,9 +105,8 @@ def mergets(left, right, codes):
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
-
+    out : pandas.DataFrame
+        DataFrame with time series merged.
     """
     y = right[codes]
     y.columns = codes.index
@@ -119,14 +121,13 @@ def remove_wcond(df, cond):
     ----------
     df : pandas.DataFrame
         A pandas dataframe.
-    cond : TYPE
-        anything that could be a condition. Example: df['x'].notna()
+    cond : -
+        Anything that could be a condition. Example: df['x'].notna()
 
     Returns
     -------
     pandas.DataFrame
         dataframe with the data specified by the condition.
-
     """
     return df[cond]
 
@@ -142,11 +143,61 @@ def create_datecol(df, d = None, year = None, month = None):
 class stackedDF():
     
     def __init__(self, df, yearcol, d):
+        """
+        Creation of a stackedDF object
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            A "stacked" DataFrame with codes as index, a column indicating
+            the year and the other columns indicating the months.
+        yearcol : str
+            Label of the column in df containing the years.
+        d : dict
+            A dictionary associating the months in the columns to their
+            cardinal number. It can be obtained as:
+                d = {month: index for index, month in enumerate(months, start = 1) if month}
+                where month is the list containing the months columns labels
+        """
         self.df = df
         self.y = yearcol
-        # self.m = monthcol
         self.d = d
-        
+    
+    def rearrange(self, store = False):
+        """
+        Rearranges the stackedDF to obtain a simpler date/code dataframe
+
+        Parameters
+        ----------
+        store : bool, optional
+            If to store the obtained df inside the object. The default is False.
+
+        Returns
+        -------
+        tool : pandas.DataFrame
+            Re-arranged DataFrame with date as index and codes as columns.
+        """
+        idx = pd.date_range(f"{min(self.df[self.y])}-01-01", f"{max(self.df[self.y])}-12-01", freq = 'MS')
+        tool = pd.DataFrame(np.zeros(len(idx)), index = idx)
+        tool.rename(columns = {0: 'tool'}, inplace = True)
+        uniquecodes = list(dict.fromkeys(self.df.index.to_list()))
+        for code in uniquecodes:
+            subset = self.df.loc[code, :]
+            if not isinstance(subset, pd.Series):
+                s = subset.set_index(self.y).stack(dropna = False)
+                s = s.reset_index()
+                s['datecol'] = self.create_datecol(s, month = 'level_1')
+                s.drop(columns = [self.y, 'level_1'], inplace = True)
+                s.sort_values('datecol', inplace = True)
+                s.rename(columns = {0: code}, inplace = True)
+                s.set_index('datecol', inplace = True)
+            else:
+                s = self.dealwithseries(subset)
+            tool = pd.merge(tool, s, left_index = True, right_index = True, how = 'left')
+        tool.drop(columns = 'tool', inplace = True)
+        if store: self.arranged = tool
+        return tool
+    
     def create_datecol(self, s, month):
         df = s.copy()
         df[month] = [self.d[m] for m in df[month]]
@@ -154,26 +205,18 @@ class stackedDF():
         datecol = pd.to_datetime(datecol, format = '%Y-%m-%d')
         return datecol
     
-    def rearrange(self):
-        idx = pd.date_range(f"{min(self.df[self.y])}-01-01", f"{max(self.df[self.y])}-12-01", freq = 'MS')
-        tool = pd.DataFrame(np.zeros(len(idx)), index = idx)
-        tool.rename(columns = {0: 'tool'}, inplace = True)
-                
-        for code in self.df.index:
-            s = self.df.loc[code, :].set_index(self.y).stack(dropna = False)
-            s = s.reset_index()
-            s['datecol'] = self.create_datecol(s, month = 'level_1')
-            s.drop(columns = [self.y, 'level_1'], inplace = True)
-            s.sort_values('datecol', inplace = True)
-            s.rename(columns = {0: code}, inplace = True)
-            s.set_index('datecol', inplace = True)
-            
-            tool = pd.merge(tool, s, left_index = True, right_index = True, how = 'left')
-            
-            return tool
-
-            
-            
-    pass
+    def dealwithseries(self, subset):
+        """
+        Single-year codes
+        """
+        year = subset[self.y]
+        subset = subset[1:]
+        df = pd.DataFrame(subset)
+        df.reset_index(inplace = True)
+        df.insert(0, self.y, int(year))
+        df['datecol'] = self.create_datecol(df, 'index')
+        df.drop(columns = [self.y, 'index'], inplace = True)
+        df.set_index('datecol', inplace = True)
+        return df
 
 
