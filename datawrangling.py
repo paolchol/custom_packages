@@ -163,12 +163,14 @@ class stackedDF():
         self.y = yearcol
         self.d = d
     
-    def rearrange(self, store = False):
+    def rearrange(self, index_label = None, store = False):
         """
         Rearranges the stackedDF to obtain a simpler date/code dataframe
 
         Parameters
         ----------
+        index_label : str, optional
+            The label of the output dataframe's index. The default is None.
         store : bool, optional
             If to store the obtained df inside the object. The default is False.
 
@@ -195,6 +197,7 @@ class stackedDF():
                 s = self.dealwithseries(subset)
             tool = pd.merge(tool, s, left_index = True, right_index = True, how = 'left')
         tool.drop(columns = 'tool', inplace = True)
+        if index_label is not None: tool.index.names = [index_label]
         if store: self.arranged = tool
         return tool
     

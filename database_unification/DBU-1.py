@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-dbu: DataBase Unification
+DBU: DataBase Unification
 Unificazione del dataset utilizzato per il PTUA 2003 con il dataset
 reso disponibile da ARPA per il PTUA 2022
-pt2: Parte 2
-Associazione dei piezometri del PTUA2003 a quelli disponibili al PTUA 2022
+
+Le operazioni necessarie a ottenere meta2003 e head2003 sono svolte in
+PTUA2003_struct
 
 @author: paolo
 """
