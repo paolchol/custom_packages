@@ -48,34 +48,29 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     if col_order is not None: df = df[col_order]
     return df
 
-def mergemeta(left, right, link = None, codename = None,
-              *, firstmerge: dict, secondmerge: dict):
+def mergemeta(left, right, link = None,*, firstmerge: dict, secondmerge: dict):
     """
     Merge two metadata databases
 
     Parameters
     ----------
-    left : TYPE
-        DESCRIPTION.
-    right : TYPE
-        DESCRIPTION.
-    link : TYPE, optional
-        DESCRIPTION. The default is None.
-    rearrange : TYPE, optional
-        DESCRIPTION. The default is False.
-    codename : TYPE, optional
-        DESCRIPTION. The default is None.
-    * : TYPE
-        DESCRIPTION.
-    firstmerge : dict
-        DESCRIPTION.
-    secondmerge : dict
-        DESCRIPTION.
-
+    left, right : pandas.DataFrame
+        Two DataFrames containing metadata.
+    link : pandas.DataFrame, optional
+        A DataFrame containing codes which link 'right' to 'left'.
+        The default is None.
+    firstmerge : dict, optional
+        A **kwargs argument to provide additional instructions to the
+        (optional) merge between 'right' and 'link'.
+    secondmerge : dict, optional
+        A **kwargs argument to provide additional instructions to the
+        merge between 'left' and 'right'.
+    
     Returns
     -------
-    out : TYPE
-        DESCRIPTION.
+    out : pandas.DataFrame
+        A merged DataFrame of 'left' and 'right'. If 'link' is provided, it
+        will be used as a link between the two dataframes.
 
     """
     if link is not None:
@@ -98,7 +93,6 @@ def mergets(left, right, codes):
     right : pandas.DataFrame
         Time series dataframe to merge.
     codes : pandas.Series
-        Codes with 
         Series with:
             values: codes associated to the right df
             index: codes associated to the left df, to perform the merge.
