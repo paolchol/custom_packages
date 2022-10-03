@@ -48,6 +48,37 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     if col_order is not None: df = df[col_order]
     return df
 
+def join_twocols(df, cols, onlyna = True, rename = None):
+    """
+    Uses the data in cols[1] to fill the nans in cols[0] (onlyna = True) or 
+    to replace the values in cols[0] when an occurrence in cols[1] is found
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DESCRIPTION.
+    cols : list of str
+        DESCRIPTION.
+    onlyna : bool, optional
+        DESCRIPTION. The default is True.
+    rename : str, optional
+        Name of the merged column. The default is None.
+
+    Returns
+    -------
+    df : TYPE
+        DESCRIPTION.
+
+    """
+    if onlyna:
+        pos = df.loc[:, cols[0]].isna()
+    else:
+        pos = df.loc[:, cols[1]].notna()
+    df.loc[pos, cols[0]] = df.loc[pos, cols[1]]
+    df.drop(columns = cols[1], inplace = True)
+    if rename is not None: df.rename(columns = {f'{cols[0]}': rename}, inplace = True)
+    return df
+
 def mergemeta(left, right, link = None,*, firstmerge: dict, secondmerge: dict):
     """
     Merge two metadata databases
