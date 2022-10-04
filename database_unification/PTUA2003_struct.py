@@ -147,6 +147,9 @@ meta.index = [f'0{code}' if (len(code)>6) and (code[0] != 'P') else code for cod
 meta.index.names = ['CODICE']
 ts.columns = [f'0{code}' if (len(code)>6) and (code[0] != 'P') else code for code in ts.columns]
 
+#Aggiunta colonna ORIGINE
+meta['ORIGINE'] = 'PTUA2003'
+
 # %% Salvataggio dei dataset ottenuti
 
 meta.to_csv('data/PTUA2003/meta_PTUA2003_TICINOADDA_unfiltered.csv')

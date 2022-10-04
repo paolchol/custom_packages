@@ -40,16 +40,34 @@ for col in df.columns[33:38]:
 df = dw.join_twocols(df, ['CODICE', 'CODICE ACQUAGEST'], onlyna = False)
 df['CODICE'] = [str(code) for code in df['CODICE']]
 df['CODICE'] = [f'0{code}' if (len(code)>6) and (code[0] != 'P') else code for code in df['CODICE']]
+#remove duplicate points
+df.drop_duplicates('CODICE', 'last', inplace = True) #last because the first duplicate has data inside
+#join two rows which from knowledge refer to the same point
+df = dw.join_tworows(df, [24, 25])
 
 # %% Split in meta and data databases
 
 cols = df.columns.to_list()
-meta = df.iloc[:, 0:13].copy()
+meta = df.iloc[:, 0:12].copy()
 head = df.loc[:, [cols[3]] + cols[12:]].copy()
+
+#meta
+meta.set_index('CODICE', inplace = True)
+meta['ORIGINE'] = 'OLONA'
 
 #rearrange head
 head = head.set_index('CODICE').transpose()
 head.set_index(pd.date_range('2001-05-01', '2003-08-01', freq = 'MS'), inplace = True)
+head.index.names = ['DATA']
 
-meta.to_csv('data/Olona/meta_Olona.csv')
+meta.to_csv('data/Olona/meta_Olona_unfiltered.csv')
 head.to_csv('data/Olona/head_Olona.csv')
+
+# %% Filter the metadata based on "FALDA" field
+
+meta['FALDA'].describe()
+meta['FALDA'].value_counts()
+idx = meta.loc[:, 'FALDA'].isin(['1', 'SUPERF.', 'SUPERF. (acquifero locale)'])
+meta = meta.loc[idx, :]
+
+meta.to_csv('data/Olona/meta_Olona_filtered.csv')

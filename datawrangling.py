@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Functions for dataset wrangling
-For data wrangling I mean:
+Functions for data wrangling.
+As data wrangling I mean:
     - operations on the datasets such as merge and concat
     - rows or columns removals
 
@@ -48,36 +48,50 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     if col_order is not None: df = df[col_order]
     return df
 
-def join_twocols(df, cols, onlyna = True, rename = None):
+def join_twocols(df, cols, onlyna = True, rename = None, add = False,
+                 inplace = False):
     """
     Uses the data in cols[1] to fill the nans in cols[0] (onlyna = True) or 
-    to replace the values in cols[0] when an occurrence in cols[1] is found
+    to replace the values in cols[0] when an occurrence in cols[1] is found 
+    (onlyna = False).
 
     Parameters
     ----------
     df : pandas.DataFrame
-        DESCRIPTION.
+        A dataframe with two columns you want to merge into one.
     cols : list of str
-        DESCRIPTION.
+        A list containing the labels of the two columns. The order is important
+        and explained in the function's and onlyna descriptions.
     onlyna : bool, optional
-        DESCRIPTION. The default is True.
+        If True, cols[0] nans are filled with cols[1] values in the same position.
+        If False, the values in cols[0] are replaced with non-nan values from
+        cols[1].
+        The default is True.
     rename : str, optional
         Name of the merged column. The default is None.
 
     Returns
     -------
-    df : TYPE
+    df : pandas.DataFrame
         DESCRIPTION.
-
     """
+    if not inplace: df = df.copy()
     if onlyna:
         pos = df.loc[:, cols[0]].isna()
     else:
         pos = df.loc[:, cols[1]].notna()
-    df.loc[pos, cols[0]] = df.loc[pos, cols[1]]
+    vals = df.loc[pos, cols[1]] if not add else df.loc[pos, cols[0]] + '-' + df.loc[pos, cols[1]]
+    df.loc[pos, cols[0]] = vals
     df.drop(columns = cols[1], inplace = True)
     if rename is not None: df.rename(columns = {f'{cols[0]}': rename}, inplace = True)
-    return df
+    if not inplace: return df
+
+def join_tworows(df, rows, inplace = False):
+    if not inplace: df = df.copy()
+    pos = df.loc[rows[0], :].isna()
+    df.loc[rows[0], pos] = df.loc[rows[1], pos]
+    df.drop(index = rows[1], inplace = True)
+    if not inplace: return df
 
 def mergemeta(left, right, link = None,*, firstmerge: dict, secondmerge: dict):
     """
@@ -245,4 +259,28 @@ class stackedDF():
         df.set_index('datecol', inplace = True)
         return df
 
+class DBU():
+    
+    def __init__(self, meta_index = None, ts_index = None):
+        self.meta_index = meta_index if meta_index is not None else ['CODICE', 'CODICE']
+        self.ts_index = ts_index if ts_index is not None else ['DATA', 'DATA']
+    
+    def pass_meta(self, first, second, SIF = False):
+        self.meta1 = pd.read_csv(first, index_col = self.meta_index[0])
+        self.meta2 = pd.read_csv(second, index_col= self.meta_index[1])
+        if SIF:
+            first['CODICE_SIF'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in first['CODICE_SIF']]
+    
+    def pass_ts(self, first, second):
+        self.ts1 = pd.read_csv(first, index_col= self.ts_index[1])
+        self.ts2 = pd.read_csv(second, index_col= self.ts_index[1])
+    
+    def identify_codes(self, codes_db = None, spatial = False):
+        pass
+    
+    def merge_meta(self):
+        pass
+    
+    def merge_ts(self):
+        pass
 
