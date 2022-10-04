@@ -63,18 +63,33 @@ metamerge.rename(columns = {'CODICE_link': 'CODICE', 'index': 'CODICE_Olona'}, i
 metamerge.set_index('CODICE', inplace = True)
 
 metamerge.insert(25, 'z_Olona', metamerge['Q'])
-todrop = ['Q', 'DENOMINAZIONE', 'PUBBLICO', 'STRAT.', 'X', 'Y', 'PROV']
+#CODICE_Olona doesn't provide additional information, thus it's dropped
+todrop = ['Q', 'DENOMINAZIONE', 'PUBBLICO', 'STRAT.', 'X', 'Y', 'PROV', 'CODICE_Olona']
 metamerge.drop(columns = todrop, inplace = True)
 
+#join overlapping columns
 metamerge = dw.joincolumns(metamerge, '_DBU', '_Olona')
 metamerge = dw.join_twocols(metamerge, ["INDIRIZZO", "LOCALITA'"], rename = "INFO")
+metamerge = dw.join_twocols(metamerge, ["INFO_PTUA2003", "INFO"], rename = "INFO")
 
-for i, col in enumerate(metamerge.columns):
-    print(f"{i}: {col}")
+metamerge.to_csv('data/results/db-unification/meta_DBU-4.csv')
 
-#join località e indirizzo (tieni località come nome)
+#%% Merge time series
 
+headDBU = pd.read_csv('data/results/db-unification/head_DBU-3.csv', index_col = 'DATA')
+headDBU.index = pd.DatetimeIndex(headDBU.index)
 
-# metamerge.rename(columns = {'ORIGINE': 'ORIGINE_dbu', 'CODICE_SIF': 'CODICE_SIF_dbu'}, inplace = True)
+codelst = codelst.loc[codelst.isin(metamerge.index).values, :]
+codelst.reset_index(drop = False, inplace = True)
+codelst.set_index('CODICE_link', inplace = True)
+codelst = codelst.squeeze()
+sum(codelst.index.isin(headDBU.columns))
+headmerge = dw.mergets(headDBU, head, codelst)
 
-# metamerge.to_csv('data/results/db-unification/meta_DBU-3.csv')
+#Visualize the result
+vis = head[codelst]
+vismerge = headmerge[codelst.index]
+visdbu = headDBU[codelst.index]
+dv.interactive_TS_visualization(vismerge, file = 'plot/dbu/added_ts_DBU-4.html')
+
+headmerge.to_csv('data/results/db-unification/head_DBU-4.csv')

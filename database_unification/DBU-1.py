@@ -110,6 +110,7 @@ head2022.index = pd.DatetimeIndex(head2022.index)
 head2003.index = pd.DatetimeIndex(head2003.index)
 
 codes = meta.loc[meta['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_PTUA2003'].dropna()
+codes = pd.concat([codes, meta.loc[meta['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_SIF'].dropna()])
 sum(codes.index.isin(head2022.columns))
 headmerge = dw.mergets(head2022, head2003, codes)
 
