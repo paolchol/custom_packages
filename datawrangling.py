@@ -182,29 +182,53 @@ def create_datecol(df, d = None, year = None, month = None):
     return datecol
 
 class stackedDF():
-    
-    def __init__(self, df, yearcol, d):
-        """
-        Creation of a stackedDF object
+    """
+    Creation of a stackedDF object
 
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            A "stacked" DataFrame with codes as index, a column indicating
-            the year and the other columns indicating the months.
-        yearcol : str
-            Label of the column in df containing the years.
-        d : dict
-            A dictionary associating the months in the columns to their
-            cardinal number. It can be obtained as:
-                d = {month: index for index, month in enumerate(months, start = 1) if month}
-                where month is the list containing the months columns labels
-        """
-        self.df = df
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        A "stacked" DataFrame.
+    dftype : sts
+        A string indicating "df"' structure. It can be:
+            - monthscols: 
+                The data is organized with codes as index, a column
+                indicating the year and 12 columns indicating the value
+                each month.
+            - daterows:
+                The data is organized with codes as index, a column 
+                indicating the date and a column indicating the values in 
+                each date.
+        The default is "monthscols".
+    yearcol : str
+        Label of the column in df containing the years. Needed for dftype
+        "monthscols". The default is None.
+    datecol : str
+        Label of the column in df containing the date. Needed for dftype
+        "daterows". The default is None.
+    d : dict, only needed for dftype "monthscols"
+        A dictionary associating the months in the columns to their
+        cardinal number. It can be obtained as:
+            d = {month: index for index, month in enumerate(months, start = 1) if month}
+            where month is the list containing the months columns labels
+    """
+    
+    def __init__(self, df, dftype = 'monthscols', yearcol = None,
+                 datecol = None, d = None):        
+        self.df = df.copy()
+        self.dt = dftype
         self.y = yearcol
+        self.dc = datecol
+        if (yearcol is None) & (datecol is None):
+            print('ERROR: You need to provide one between yearcol and datecol.\
+                  Refer to the documentation to learn which one you need.')
+            return
+        if (dftype == 'monthscols') & (d is None):
+            print("ERROR: d is necessary when dftype is 'monthscols'")
         self.d = d
     
-    def rearrange(self, index_label = None, store = False):
+    def rearrange(self, index_label = None, store = False, setdate = False,
+                  rule = '1MS',*, dateargs: dict, pivotargs: dict):
         """
         Rearranges the stackedDF to obtain a simpler date/code dataframe
 
@@ -214,30 +238,55 @@ class stackedDF():
             The label of the output dataframe's index. The default is None.
         store : bool, optional
             If to store the obtained df inside the object. The default is False.
-
+        setdate : bool, optional
+            If to transform df's date column as DateTime. Only useful for dftype 
+            "daterows" when the date column isn't already a DateTime object.
+            The default is False.
+        rule : DateOffset, Timedelta or str, optional
+            The offset string or object representing target conversion in 
+            pandas.DataFrame.resample(). The default is "1MS".
+        
+        **dateargs : dict, optional
+            Optional arguments to provide to pandas.to_datetime. Example: to 
+            specify a specific date format. Only useful for dftype "daterows".
+        **pivotargs : dict, optional
+            Arguments to pass to pandas.DataFrame.pivot(). Needed for dftype 
+            "daterows".
+        
         Returns
         -------
         tool : pandas.DataFrame
             Re-arranged DataFrame with date as index and codes as columns.
         """
-        idx = pd.date_range(f"{min(self.df[self.y])}-01-01", f"{max(self.df[self.y])}-12-01", freq = 'MS')
-        tool = pd.DataFrame(np.zeros(len(idx)), index = idx)
-        tool.rename(columns = {0: 'tool'}, inplace = True)
-        uniquecodes = list(dict.fromkeys(self.df.index.to_list()))
-        for code in uniquecodes:
-            subset = self.df.loc[code, :]
-            if not isinstance(subset, pd.Series):
-                s = subset.set_index(self.y).stack(dropna = False)
-                s = s.reset_index()
-                s['datecol'] = self.create_datecol(s, month = 'level_1')
-                s.drop(columns = [self.y, 'level_1'], inplace = True)
-                s.sort_values('datecol', inplace = True)
-                s.rename(columns = {0: code}, inplace = True)
-                s.set_index('datecol', inplace = True)
-            else:
-                s = self.dealwithseries(subset)
-            tool = pd.merge(tool, s, left_index = True, right_index = True, how = 'left')
-        tool.drop(columns = 'tool', inplace = True)
+        # df = self.df if inplace else self.df.copy()
+        if self.dt == 'monthscols':
+            idx = pd.date_range(f"{min(self.df[self.y])}-01-01", f"{max(self.df[self.y])}-12-01", freq = 'MS')
+            tool = pd.DataFrame(np.zeros(len(idx)), index = idx)
+            tool.rename(columns = {0: 'tool'}, inplace = True)
+            uniquecodes = list(dict.fromkeys(self.df.index.to_list()))
+            for code in uniquecodes:
+                subset = self.df.loc[code, :]
+                if not isinstance(subset, pd.Series):
+                    s = subset.set_index(self.y).stack(dropna = False)
+                    s = s.reset_index()
+                    s['datecol'] = self.create_datecol(s, month = 'level_1')
+                    s.drop(columns = [self.y, 'level_1'], inplace = True)
+                    s.sort_values('datecol', inplace = True)
+                    s.rename(columns = {0: code}, inplace = True)
+                    s.set_index('datecol', inplace = True)
+                else:
+                    s = self.dealwithseries(subset)
+                tool = pd.merge(tool, s, left_index = True, right_index = True, how = 'left')
+            tool.drop(columns = 'tool', inplace = True)
+        elif self.dt == 'daterows':
+            if setdate: self.df[self.dc] = pd.to_datetime(self.df[self.dc], **dateargs)
+            tool = self.df.reset_index(self.df.index.names).copy()
+            tool.set_index(self.dc, inplace = True)
+            tool = tool.pivot(**pivotargs)
+            tool = tool.resample(rule).mean()
+        else:
+            print("Invalid 'dftype' provided when creating the object")
+            return
         if index_label is not None: tool.index.names = [index_label]
         if store: self.arranged = tool
         return tool

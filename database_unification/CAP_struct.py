@@ -3,7 +3,7 @@
 CAP database rearrangement
 
 - Load Soggiacenza_CAP.xls
-- Structure the dataase in a meta and head files
+- Structure the database in a meta and head files
 
 @author: paolo
 """
@@ -43,8 +43,10 @@ data[data == 0] = np.nan
 data.set_index('sif', inplace = True)
 data.index = [f"0{idx}" for idx in data.index]
 d = {month: index for index, month in enumerate(months, start = 1) if month}
-stdf = dw.stackedDF(data, 'ANNO', d)
+stdf = dw.stackedDF(data, d = d, yearcol = 'ANNO')
 data = stdf.rearrange(index_label = 'DATA')
+
+data.reset_index(data.index.names)
 
 #data is not head already, it needs to be calculated from the Z field in meta
 head = data.copy()
