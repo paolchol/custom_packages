@@ -31,6 +31,8 @@ meta.drop_duplicates('Codice_SIF', inplace = True)
 meta['Codice_SIF'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in meta['Codice_SIF']]
 meta.loc[meta['Codice_SIF'].isna(), 'Codice_SIF'] = 'SIF_NA'
 meta.reset_index(drop = True, inplace = True)
+meta.set_index('Codice_SIF', inplace = True)
+meta.index.names = ['CODICE']
 
 #data
 data['Codice_SIF'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in data['Codice_SIF']]
