@@ -34,6 +34,7 @@ data = original[datacols].copy()
 meta.drop_duplicates('sif', 'last', inplace = True) #last: to maintain the informations in "INDIRIZZO_" and "INDIRIZZO"
 meta.drop(columns = ['ID1', 'ANNO', 'codice', 'N_POZZO', 'N_POZZO_TX', 'INDIRIZZO_'], inplace = True)
 meta.rename(columns = {'ORIGINE_DA': 'ORIGINE'}, inplace = True)
+meta['ORIGINE'] = 'CAP'
 meta.set_index('sif', inplace = True)
 meta.index = [f"0{idx}" for idx in meta.index]
 meta.index.names = ['CODICE']
@@ -44,9 +45,7 @@ data.set_index('sif', inplace = True)
 data.index = [f"0{idx}" for idx in data.index]
 d = {month: index for index, month in enumerate(months, start = 1) if month}
 stdf = dw.stackedDF(data, d = d, yearcol = 'ANNO')
-data = stdf.rearrange(index_label = 'DATA')
-
-data.reset_index(data.index.names)
+data = stdf.rearrange(index_label = 'DATA', dateargs = {}, pivotargs = {})
 
 #data is not head already, it needs to be calculated from the Z field in meta
 head = data.copy()
