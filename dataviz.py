@@ -14,17 +14,19 @@ import numpy as np
 def fast_TS_visualization(df):
     plt.figure()
     for i, column in enumerate(df.columns, start = 1):
-    	plt.subplot(len(df.columns), 1, i)
-    	plt.plot(df.index, df[column].values)
-    	plt.title(column, y = 0.5, loc = 'right')
+        plt.subplot(len(df.columns), 1, i)
+        plt.plot(df.index, df[column].values)
+        plt.title(column, y = 0.5, loc = 'right')
     plt.show()
 
-def interactive_TS_visualization(df, xlab = 'X', ylab = 'Y', file = 'temp.html'):
+def interactive_TS_visualization(df, xlab = 'X', ylab = 'Y', file = 'temp.html',
+                                 **kwargs):
     figure = px.line(df)
     figure.update_layout(
         xaxis_title = xlab,
         yaxis_title = ylab,
-        legend_title = "Variables"
+        legend_title = "Variables",
+        **kwargs
         )
     plot(figure, filename = file)
 
@@ -51,20 +53,31 @@ def heatmap_TS(data, row_labels, col_labels, step, ax = None, title = None,
 
     Parameters
     ----------
-    data
+    data : numpy.ndarray
         A 2D numpy array of shape (M, N).
-    row_labels
+    row_labels : list or array of str
         A list or array of length M with the labels for the rows.
-    col_labels
+    col_labels : list or array of str
         A list or array of length N with the labels for the columns.
-    ax
+    ax : matplotlib.axes.Axes, optional
         A `matplotlib.axes.Axes` instance to which the heatmap is plotted.  If
-        not provided, use current axes or create a new one.  Optional.
-    cbar_kw
-        A dictionary with arguments to `matplotlib.Figure.colorbar`.  Optional.
-    cbarlabel
-        The label for the colorbar.  Optional.
-    **kwargs
+        not provided, use current axes or create a new one. The default is None.
+        
+    title :    
+    
+    cbar_kw : dict, optional
+        A dictionary with arguments to `matplotlib.Figure.colorbar`.
+    cbarlabel : str, optional
+        The label for the colorbar. The deafult is "".
+        
+    white :
+        
+    rotate :
+    
+    labelsize : 
+       
+    
+    **kwargs :
         All other arguments are forwarded to `imshow`.
     """
 
@@ -98,7 +111,7 @@ def heatmap_TS(data, row_labels, col_labels, step, ax = None, title = None,
         ax.grid(which="minor", color="w", linestyle='-', linewidth=3)
         ax.tick_params(which="minor", bottom=False, left=False)
     
-    if title:
+    if title is not None:
         ax.set_title(title)
     
     return im, cbar
