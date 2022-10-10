@@ -48,8 +48,9 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     if col_order is not None: df = df[col_order]
     return df
 
+
 def join_twocols(df, cols, onlyna = True, rename = None, add = False,
-                 inplace = False):
+                 inplace = False, keepall = False):
     """
     Uses the data in cols[1] to fill the nans in cols[0] (onlyna = True) or 
     to replace the values in cols[0] when an occurrence in cols[1] is found 
@@ -75,12 +76,17 @@ def join_twocols(df, cols, onlyna = True, rename = None, add = False,
     df : pandas.DataFrame
         DESCRIPTION.
     """
+    def itsnan(num):
+        return num != num
     if not inplace: df = df.copy()
     if onlyna:
         pos = df.loc[:, cols[0]].isna()
     else:
         pos = df.loc[:, cols[1]].notna()
-    vals = df.loc[pos, cols[1]] if not add else df.loc[pos, cols[0]] + '-' + df.loc[pos, cols[1]]
+    if add:
+        vals = [f"{y}" if itsnan(x) else f"{x}-{y}" for x, y in zip(df.loc[pos, cols[0]], df.loc[pos, cols[1]])]
+    else:
+        vals = df.loc[pos, cols[1]]
     df.loc[pos, cols[0]] = vals
     df.drop(columns = cols[1], inplace = True)
     if rename is not None: df.rename(columns = {f'{cols[0]}': rename}, inplace = True)
@@ -128,6 +134,11 @@ def mergets(left, right, codes):
     """
     Function to merge two time series dataframes based on associated codes
     provided.
+
+    The merge operated is an 'outer' join, meaning it will use union of keys
+    from both frames. The resulting dataframe will then also have columns which
+    were present in only one of the two dataframes.
+    
     The merged dataframe is passed to joincolumns to join the duplicated
     columns that pandas.merge will produce.
 
