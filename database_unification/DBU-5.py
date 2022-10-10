@@ -128,6 +128,7 @@ drop = dbu_show.columns[np.invert(dbu_show.columns.isin(meta_ntmrg.columns))]
 dbu_show.drop(columns = drop, inplace = True)
 dbu_show.loc[dbu_show['ORIGINE'].isna(), 'ORIGINE'] = 'DBU'
 points = pd.concat([dbu_show, meta_ntmrg])
+
 gd.show_mappoints(points, 'lat', 'lon', color = 'ORIGINE', hover_name = 'CODICE')
 
 #export the points left out as a csv, to then search for the basin code on QGIS
@@ -159,10 +160,8 @@ to_insert.rename(columns = {'COD_PTUA16': 'BACINO_WISE',
 to_insert['PROVINCIA'] = 'MI'
 to_insert['CODICE_FOG'] = to_insert['CODICE']
 
-# to_merge = metamerge.reset_index().copy()
 metamerge = pd.merge(metamerge, to_insert, how = 'outer', left_index = True, right_on = 'CODICE')
 metamerge = dw.joincolumns(metamerge)
-metamerge.set_index('CODICE', inplace = True)
 
 metamerge.to_csv('data/results/db-unification/meta_DBU-5.csv')
 
