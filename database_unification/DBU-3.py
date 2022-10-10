@@ -66,10 +66,10 @@ metamerge = dw.mergemeta(metaDBU, meta, link = codelst,
 metamerge.rename(columns = {'CODICE_link': 'CODICE', 'index': 'CODICE_SIF_I2005'}, inplace = True)
 metamerge.set_index('CODICE', inplace = True)
 
-metamerge.drop(columns = ['x', 'y', 'lat_I2005', 'lon_I2005'], inplace = True)
 metamerge.insert(24, 'z_I2005', metamerge['z'])
-metamerge.drop(columns = 'z', inplace = True)
-metamerge.rename(columns = {'ORIGINE': 'ORIGINE_dbu', 'CODICE_SIF': 'CODICE_SIF_dbu'}, inplace = True)
+metamerge.drop(columns = ['z', 'x', 'y', 'lat_I2005', 'lon_I2005'], inplace = True)
+metamerge = dw.join_twocols(metamerge, ['ORIGINE', 'ORIGINE_I2005'], add = True, onlyna = False)
+metamerge = dw.join_twocols(metamerge, ['CODICE_SIF', 'CODICE_SIF_I2005'])
 metamerge = dw.joincolumns(metamerge, '_dbu', '_I2005')
 
 metamerge.to_csv('data/results/db-unification/meta_DBU-3.csv')

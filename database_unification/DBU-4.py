@@ -68,9 +68,10 @@ todrop = ['Q', 'DENOMINAZIONE', 'PUBBLICO', 'STRAT.', 'X', 'Y', 'PROV', 'CODICE_
 metamerge.drop(columns = todrop, inplace = True)
 
 #join overlapping columns
+metamerge = dw.join_twocols(metamerge, ["INDIRIZZO", "LOCALITA'"], rename = "INFO", add = True, onlyna = False)
+metamerge = dw.join_twocols(metamerge, ["INFO_PTUA2003", "INFO"], rename = "INFO", add = True, onlyna = False)
+metamerge = dw.join_twocols(metamerge, ["ORIGINE_DBU", "ORIGINE_Olona"], rename = "ORIGINE", add = True, onlyna = False)
 metamerge = dw.joincolumns(metamerge, '_DBU', '_Olona')
-metamerge = dw.join_twocols(metamerge, ["INDIRIZZO", "LOCALITA'"], rename = "INFO")
-metamerge = dw.join_twocols(metamerge, ["INFO_PTUA2003", "INFO"], rename = "INFO")
 
 metamerge.to_csv('data/results/db-unification/meta_DBU-4.csv')
 
@@ -80,11 +81,15 @@ headDBU = pd.read_csv('data/results/db-unification/head_DBU-3.csv', index_col = 
 headDBU.index = pd.DatetimeIndex(headDBU.index)
 
 codelst = codelst.loc[codelst.isin(metamerge.index).values, :]
+idx = metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA'
+codelst = codelst.loc[codelst['CODICE_link'].isin(metamerge.loc[idx, :].index), :]
+
 codelst.reset_index(drop = False, inplace = True)
 codelst.set_index('CODICE_link', inplace = True)
 codelst = codelst.squeeze()
 sum(codelst.index.isin(headDBU.columns))
 headmerge = dw.mergets(headDBU, head, codelst)
+sum(codelst.index.isin(headmerge.columns))
 
 #Visualize the result
 vis = head[codelst]
