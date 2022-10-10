@@ -33,6 +33,8 @@ meta.loc[meta['Codice_SIF'].isna(), 'Codice_SIF'] = 'SIF_NA'
 meta.reset_index(drop = True, inplace = True)
 meta.set_index('Codice_SIF', inplace = True)
 meta.index.names = ['CODICE']
+meta['COMUNE'] = 'MILANO'
+meta['ORIGINE'] = 'FOG'
 
 #data
 data['Codice_SIF'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in data['Codice_SIF']]
