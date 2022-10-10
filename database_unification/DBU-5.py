@@ -107,6 +107,8 @@ dv.interactive_TS_visualization(vismerge, file = 'plot/dbu/added_ts_DBU-5_firstm
 dv.interactive_TS_visualization(visdbu, file = 'plot/dbu/added_ts_DBU-5_originalTS.html',
                                 title_text = 'Original time series in DBU-4 which got then merged')
 
+headmerge.to_csv('data/results/db-unification/head_DBU-5_firstmerge.csv')
+
 # %% Identify the groundwater basin of the Milano1950 metadata not merged
 
 #visualize all series not merged in head, to decide which ones not to keep
@@ -131,6 +133,9 @@ gd.show_mappoints(points, 'lat', 'lon', color = 'ORIGINE', hover_name = 'CODICE'
 #export the points left out as a csv, to then search for the basin code on QGIS
 meta_ntmrg.to_csv('database_unification/DBU-5_leftout.csv', index = False)
 #join on QGIS
+
+# %% Definitive metadata database
+
 #import the joined df
 points = pd.read_csv('database_unification/DBU-5_leftout_joinQGIS.csv')
 points.drop(columns = points.columns[np.invert(points.columns.isin(['CODICE', 'COD_PTUA16']))], inplace = True)
@@ -160,3 +165,16 @@ metamerge = dw.joincolumns(metamerge)
 metamerge.set_index('CODICE', inplace = True)
 
 metamerge.to_csv('data/results/db-unification/meta_DBU-5.csv')
+
+# %% Definitive time series database
+
+#from the metadata added at the previous step, select only the ones falling
+#inside IT03GWBISSAPTA
+idx = metamerge.loc[to_insert['CODICE'], 'BACINO_WISE'] == 'IT03GWBISSAPTA'
+codes = to_insert.loc[idx.values, 'CODICE_SIF']
+codes.index = to_insert.loc[idx.values, 'CODICE']
+
+headmerge = dw.mergets(headmerge, head, codes)
+#8 time series are added
+
+headmerge.to_csv('data/results/db-unification/head_DBU-5.csv')
