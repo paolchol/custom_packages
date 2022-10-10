@@ -129,14 +129,14 @@ points = pd.concat([dbu_show, meta_ntmrg])
 gd.show_mappoints(points, 'lat', 'lon', color = 'ORIGINE', hover_name = 'CODICE')
 
 #export the points left out as a csv, to then search for the basin code on QGIS
-meta_ntmrg.to_csv('database_unification/DBU-5_leftout.csv')
+meta_ntmrg.to_csv('database_unification/DBU-5_leftout.csv', index = False)
 #join on QGIS
 #import the joined df
 points = pd.read_csv('database_unification/DBU-5_leftout_joinQGIS.csv')
 points.drop(columns = points.columns[np.invert(points.columns.isin(['CODICE', 'COD_PTUA16']))], inplace = True)
 points['CODICE'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in points['CODICE']]
 
-#create a new df with the points left out and 
+#create a new df with the informations of points left out, then join with the basin code found
 to_insert = meta.loc[meta.index.isin(notmrg.columns), : ].copy()
 to_insert = to_insert.loc[np.invert(to_insert.index.isin(metamerge['CODICE_SIF'])), :]
 to_insert = pd.merge(to_insert, points, how = 'inner', left_index = True, right_on = 'CODICE')
@@ -154,9 +154,9 @@ to_insert.rename(columns = {'COD_PTUA16': 'BACINO_WISE',
 to_insert['PROVINCIA'] = 'MI'
 to_insert['CODICE_FOG'] = to_insert['CODICE']
 
-to_merge = metamerge.reset_index().copy()
-metamerge2 = pd.merge(to_merge, to_insert, how = 'outer', on = 'CODICE')
-metamerge2 = dw.joincolumns(metamerge2)
-metamerge2.set_index('CODICE', inplace = True)
+# to_merge = metamerge.reset_index().copy()
+metamerge = pd.merge(metamerge, to_insert, how = 'outer', left_index = True, right_on = 'CODICE')
+metamerge = dw.joincolumns(metamerge)
+metamerge.set_index('CODICE', inplace = True)
 
-metamerge2.to_csv('data/results/db-unification/meta_DBU-5.csv')
+metamerge.to_csv('data/results/db-unification/meta_DBU-5.csv')
