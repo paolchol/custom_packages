@@ -67,6 +67,7 @@ metamerge.drop(columns = 'Z', inplace = True)
 metamerge.rename(columns = {'CODICE_SIF': 'CODICE_SIF_keep', 'index': 'CODICE_SIF_remove'}, inplace = True)
 metamerge = dw.joincolumns(metamerge, '_keep', '_remove')
 metamerge = dw.join_twocols(metamerge, ['ORIGINE', 'ORIGINE_CAP'], add = True, onlyna = False)
+
 metamerge.to_csv('data/results/db-unification/meta_DBU-2.csv')
 
 # %% Merge the time series

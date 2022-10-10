@@ -4,7 +4,7 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = empty-project-type
-recent_files = ['datawrangling.py', 'database_unification\\DBU-3.py', 'database_unification\\Idroscalo2005_struct.py', 'database_unification\\Olona_struct.py', 'database_unification\\PTUA2003_struct.py', 'database_unification\\DBU-1.py', 'database_unification\\DBU-4.py']
+recent_files = ['datawrangling.py', 'geodata.py', 'database_unification\\DBU-5.py']
 
 [main]
 version = 0.2.0
