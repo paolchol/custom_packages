@@ -8,6 +8,8 @@ Collection of functions which operate with spatial/georeferenced data
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly.express as px
+from plotly.offline import plot
 import pyproj
 import rasterio
 
@@ -23,6 +25,21 @@ def plot_raster(raster, values = None):
     image = rasterio.plot.show(raster, ax = ax)
     fig.colorbar(base, ax = ax)
     plt.show()
+
+def show_mappoints(df, lat, lon, file = 'temp_map.html', **kwargs):
+    #https://plotly.com/python/reference/scattermapbox/
+    fig = px.scatter_mapbox(df, lat, lon, **kwargs)
+    fig.update_layout(
+        mapbox_style = "stamen-terrain",
+        mapbox_zoom = 4, #mapbox_center_lat = 41,
+        margin = {"r":0,"t":0,"l":0,"b":0}
+        )
+    fig.update_traces(
+        showlegend = False,
+        marker_size = 20,
+        opacity = 0.5
+        )
+    plot(fig, filename = file)
 
 # %% Operations on coordinates
 
