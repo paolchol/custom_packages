@@ -293,7 +293,8 @@ class stackedDF():
             if setdate: self.df[self.dc] = pd.to_datetime(self.df[self.dc], **dateargs)
             tool = self.df.reset_index(self.df.index.names).copy()
             tool.set_index(self.dc, inplace = True)
-            tool = tool.pivot(**pivotargs)
+            # tool = tool.pivot(**pivotargs)
+            tool = tool.pivot_table(index = self.dc, **pivotargs)
             tool = tool.resample(rule).mean()
         else:
             print("Invalid 'dftype' provided when creating the object")

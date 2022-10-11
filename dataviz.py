@@ -20,8 +20,11 @@ def fast_TS_visualization(df):
     plt.show()
 
 def interactive_TS_visualization(df, xlab = 'X', ylab = 'Y', file = 'temp.html',
-                                 **kwargs):
-    figure = px.line(df)
+                                 plottype = 'line', markers = False, **kwargs):
+    if plottype == 'line':
+        figure = px.line(df, markers = markers)
+    else:
+        figure = px.scatter(df)
     figure.update_layout(
         xaxis_title = xlab,
         yaxis_title = ylab,
