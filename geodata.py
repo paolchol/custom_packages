@@ -40,6 +40,32 @@ def show_mappoints(df, lat, lon, file = 'temp_map.html', **kwargs):
         opacity = 0.5
         )
     plot(fig, filename = file)
+    
+def trial_show_mappoints(df, lat, lon, file = 'temp_map.html',
+                         *, scatter = None, layout = None, traces = None):
+    #https://plotly.com/python/reference/scattermapbox/
+    if scatter is not None:
+        fig = px.scatter_mapbox(df, lat, lon, **scatter)
+    else:
+        fig = px.scatter_mapbox(df, lat, lon)
+    if layout is None:
+        fig.update_layout(
+            mapbox_style = "stamen-terrain",
+            mapbox_zoom = 4, #mapbox_center_lat = 41,
+            margin = {"r":0,"t":0,"l":0,"b":0}
+            )
+    else:
+        fig.update_layout(**layout)
+    if traces is None:
+        fig.update_traces(
+            showlegend = False,
+            #fare in modo che la legenda non sovrasti la mappa come succedeva
+            marker_size = 20,
+            opacity = 0.5
+            )
+    else:
+        fig.update_traces(**traces)
+    plot(fig, filename = file)
 
 # %% Operations on coordinates
 

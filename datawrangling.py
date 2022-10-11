@@ -50,7 +50,7 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
 
 
 def join_twocols(df, cols, onlyna = True, rename = None, add = False,
-                 inplace = False, keepall = False):
+                 inplace = False):
     """
     Uses the data in cols[1] to fill the nans in cols[0] (onlyna = True) or 
     to replace the values in cols[0] when an occurrence in cols[1] is found 
