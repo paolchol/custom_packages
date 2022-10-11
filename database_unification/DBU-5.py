@@ -129,11 +129,12 @@ dbu_show.drop(columns = drop, inplace = True)
 dbu_show.loc[dbu_show['ORIGINE'].isna(), 'ORIGINE'] = 'DBU'
 points = pd.concat([dbu_show, meta_ntmrg])
 
-gd.show_mappoints(points, 'lat', 'lon', color = 'ORIGINE', hover_name = 'CODICE')
+gd.show_mappoints(points, 'lat', 'lon', color = 'ORIGINE', hover_name = 'CODICE',
+                file = 'plot/dbu/mappoints_Milano1950.html')
 
 #export the points left out as a csv, to then search for the basin code on QGIS
 meta_ntmrg.to_csv('database_unification/DBU-5_leftout.csv', index = False)
-#join on QGIS
+#join with the basins' shapefile on QGIS
 
 # %% Definitive metadata database
 
@@ -162,6 +163,7 @@ to_insert['CODICE_FOG'] = to_insert['CODICE']
 
 metamerge = pd.merge(metamerge, to_insert, how = 'outer', left_index = True, right_on = 'CODICE')
 metamerge = dw.joincolumns(metamerge)
+metamerge.set_index('CODICE', inplace = True)
 
 metamerge.to_csv('data/results/db-unification/meta_DBU-5.csv')
 
