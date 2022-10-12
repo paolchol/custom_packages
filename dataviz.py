@@ -84,7 +84,7 @@ def heatmap_TS(data, row_labels, col_labels, step, ax = None, title = None,
         All other arguments are forwarded to `imshow`.
     """
 
-    if not ax:
+    if ax is None:
         ax = plt.gca()
 
     # Plot the heatmap

@@ -227,3 +227,19 @@ def print_row(df, row, cond = True):
             # print(f'{np.where(df.columns == col)[0][0]}')
             print(f'{col}: {df.iloc[row, np.where(df.columns == col)[0][0]]}')
             
+def stend_ts(meta, df, sttime = None, entime = None, delta = None):
+    insert = []
+    if sttime is not None:
+        sttime, entime = pd.to_datetime(sttime), pd.to_datetime(entime)
+    for ts in meta.index:
+        start = df.index[df[ts].notna()][0]
+        end = df.index[df[ts].notna()][-1]
+        if sttime is not None:
+            if (start < sttime) & (end > entime):
+                insert += [ts]
+        else:
+            dt = end - start
+            if dt.days >= delta:
+                insert += [ts]
+    return insert
+            
