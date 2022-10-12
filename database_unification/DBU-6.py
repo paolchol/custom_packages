@@ -52,15 +52,50 @@ codelst = sifpp
 
 # %% Merge metadata
 
-metamerge = dw.mergemeta(metaDBU, meta, link = codelst,
+test = dw.mergemeta(metaDBU, meta, link = codelst,
                     firstmerge = dict(left_index = True, right_index = True),
                     secondmerge = dict(left_index = True, right_on = 'CODICE_PP',
                                        suffixes = ['_DBU', '_SSG']))
-#no metadata are merged
+#no metadata are merged with the associated codes
 #evaluate if it can be meaningful to add some series
 
-dv.interactive_TS_visualization(head, markers = True, title = 'Head from SSGiovanni - check')
+dv.interactive_TS_visualization(head, markers = True, title = 'Head from SSGiovanni - check',
+                                file = 'plot/dbu/exploratory_DBU-6_SSGiovanni.html')
+#all the time series can be meaningful to add, hence they will be added
 
+# %% Insert new meta and time series
+
+#obtain the basin in which the points fall in
+meta.to_csv('data/SSGiovanni/tojoin.csv')
+#join with the basin shapefile in QGIS
+#load the joined file
+to_insert = pd.read_csv('data/SSGiovanni/DBU-6_joinQGIS.csv', index_col = 'CODICE')
+to_insert.reset_index(inplace = True)
+to_insert['CODICE'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in to_insert['CODICE']]
+to_insert.drop(columns = ['NOME_CI', 'SHAPE_AREA'], inplace = True)
+to_insert['X'], to_insert['Y'] = gd.transf_CRS(to_insert.loc[:, 'X'], to_insert.loc[:, 'Y'], 'EPSG:3003', 'EPSG:32632', series = True)
+to_insert.rename(columns = {'COD_PTUA16': 'BACINO_WISE',
+                            'CODICE': 'CODICE_SIF',
+                            'COD_LOC': 'CODICE',
+                            'X': 'X_WGS84',
+                            'Y': 'Y_WGS84',
+                            'TIPO': 'INFO'}, inplace = True)
+to_insert['PROVINCIA'] = 'MI'
+to_insert['COMUNE'] = 'SESTO SAN GIOVANNI'
+
+metamerge = pd.merge(metaDBU, to_insert, how = 'outer', left_index = True, right_on = 'CODICE')
+metamerge = dw.joincolumns(metamerge)
+metamerge.set_index('CODICE', inplace = True)
+
+#insert the time series
 headDBU = pd.read_csv('data/results/db-unification/head_DBU-5.csv', index_col = 'DATA')
 headDBU.index = pd.DatetimeIndex(headDBU.index)
-dv.interactive_TS_visualization(headDBU[metaDBU.loc[metaDBU['COMUNE'].isin(['OSNAGO', 'MEZZAGO']), :].index], markers = True)
+
+idx = metamerge.loc[to_insert['CODICE'], 'BACINO_WISE'] == 'IT03GWBISSAPTA'
+codes = to_insert.loc[idx.values, 'CODICE_SIF']
+codes.index = to_insert.loc[idx.values, 'CODICE']
+
+headmerge = dw.mergets(headDBU, head, codes)
+
+metamerge.to_csv('data/results/db-unification/meta_DBU-6.csv')
+headmerge.to_csv('data/results/db-unification/head_DBU-6.csv')

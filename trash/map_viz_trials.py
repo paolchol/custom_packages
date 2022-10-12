@@ -5,7 +5,7 @@ Visualization trials of the dataset
 @author: paolo
 """
 
-
+import dataviz as dv
 import geodata as gd
 import numpy as np
 import pandas as pd
@@ -21,3 +21,7 @@ gd.show_mappoints(viz, 'lat', 'lon', file = 'trash/viz_trial.html', color = 'ORI
 
 
 #calcolare numero e percentuale di serie storiche aggiunte
+
+headDBU = pd.read_csv('data/results/db-unification/head_DBU-5.csv', index_col = 'DATA')
+headDBU.index = pd.DatetimeIndex(headDBU.index)
+dv.interactive_TS_visualization(headDBU[metaDBU.loc[metaDBU['COMUNE'].isin(['OSNAGO', 'MEZZAGO']), :].index], markers = True)

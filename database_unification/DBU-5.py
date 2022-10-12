@@ -133,13 +133,13 @@ gd.show_mappoints(points, 'lat', 'lon', color = 'ORIGINE', hover_name = 'CODICE'
                 file = 'plot/dbu/mappoints_Milano1950.html')
 
 #export the points left out as a csv, to then search for the basin code on QGIS
-meta_ntmrg.to_csv('database_unification/DBU-5_leftout.csv', index = False)
+meta_ntmrg.to_csv('data/Milano1950/DBU-5_leftout.csv', index = False)
 #join with the basins' shapefile on QGIS
 
 # %% Definitive metadata database
 
 #import the joined df
-points = pd.read_csv('database_unification/DBU-5_leftout_joinQGIS.csv')
+points = pd.read_csv('data/Milano1950/DBU-5_leftout_joinQGIS.csv')
 points.drop(columns = points.columns[np.invert(points.columns.isin(['CODICE', 'COD_PTUA16']))], inplace = True)
 points['CODICE'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in points['CODICE']]
 
