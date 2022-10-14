@@ -38,7 +38,7 @@ sifpp.set_index('CODICE_SIF', inplace = True)
 
 #Search by position
 #Transform meta's coordinates: from Monte Mario to WGS84
-meta['lat'], meta['lon'] = gd.transf_CRS(meta.loc[:, 'X'], meta.loc[:, 'Y'], 'EPSG:3003', 'EPSG:4326', series = True)
+meta['lat'], meta['lon'] = gd.transf_CRS(meta.loc[:, 'X_GB'], meta.loc[:, 'Y_GB'], 'EPSG:3003', 'EPSG:4326', series = True)
 db_nrst = gd.find_nearestpoint(meta, metaDBU,
                      id1 = 'CODICE', coord1 = ['lon', 'lat'],
                      id2 = 'CODICE', coord2 = ['lon', 'lat'],
@@ -57,8 +57,10 @@ test = dw.mergemeta(metaDBU, meta, link = codelst,
                     secondmerge = dict(left_index = True, right_on = 'CODICE_PP',
                                        suffixes = ['_DBU', '_SSG']))
 #no metadata are merged with the associated codes
-#evaluate if it can be meaningful to add some series
 
+# %% Evaluate if it can be meaningful to add some series
+
+#visualize series
 dv.interactive_TS_visualization(head, markers = True, title = 'Head from SSGiovanni - check',
                                 file = 'plot/dbu/exploratory_DBU-6_SSGiovanni.html')
 #all the time series can be meaningful to add, hence they will be added
@@ -66,20 +68,24 @@ dv.interactive_TS_visualization(head, markers = True, title = 'Head from SSGiova
 # %% Insert new meta and time series
 
 #obtain the basin in which the points fall in
-meta.to_csv('data/SSGiovanni/tojoin.csv')
+meta.to_csv('data/SSGiovanni/DBU-6_tojoin.csv')
 #join with the basin shapefile in QGIS
 #load the joined file
 to_insert = pd.read_csv('data/SSGiovanni/DBU-6_joinQGIS.csv', index_col = 'CODICE')
 to_insert.reset_index(inplace = True)
 to_insert['CODICE'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in to_insert['CODICE']]
-to_insert.drop(columns = ['NOME_CI', 'SHAPE_AREA'], inplace = True)
-to_insert['X'], to_insert['Y'] = gd.transf_CRS(to_insert.loc[:, 'X'], to_insert.loc[:, 'Y'], 'EPSG:3003', 'EPSG:32632', series = True)
+to_insert.drop(columns = ['NOME_CI', 'SHAPE_AREA', 'TIPOLOGIA'], inplace = True)
+to_insert['X_GB'], to_insert['Y_GB'] = gd.transf_CRS(to_insert.loc[:, 'X_GB'], to_insert.loc[:, 'Y_GB'], 'EPSG:3003', 'EPSG:32632', series = True)
 to_insert.rename(columns = {'COD_PTUA16': 'BACINO_WISE',
                             'CODICE': 'CODICE_SIF',
-                            'COD_LOC': 'CODICE',
-                            'X': 'X_WGS84',
-                            'Y': 'Y_WGS84',
-                            'TIPO': 'INFO'}, inplace = True)
+                            'COD_LOCALE': 'CODICE',
+                            'X_GB': 'X_WGS84',
+                            'Y_GB': 'Y_WGS84',
+                            'QUOTA': 'QUOTA_MISU',
+                            'FILTRO_DA': 'FILTRI_TOP',
+                            'FILTRO_A': 'FILTRI_BOT',
+                            'PROF': 'PROFONDITA'}, inplace = True)
+to_insert = dw.join_twocols(to_insert, ['TIPO', 'COMPARTO'], rename = "INFO", add = True, onlyna = False)
 to_insert['PROVINCIA'] = 'MI'
 to_insert['COMUNE'] = 'SESTO SAN GIOVANNI'
 

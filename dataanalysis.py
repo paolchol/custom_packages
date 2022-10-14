@@ -227,19 +227,44 @@ def print_row(df, row, cond = True):
             # print(f'{np.where(df.columns == col)[0][0]}')
             print(f'{col}: {df.iloc[row, np.where(df.columns == col)[0][0]]}')
             
-def stend_ts(meta, df, sttime = None, entime = None, delta = None):
-    insert = []
-    if sttime is not None:
+def ts_sel_date(df, meta = None, sttime = None, entime = None, delta = None):
+    """
+    Select time series from a DataFrame based on the starting and ending
+    dates
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DESCRIPTION.
+    meta : pandas.Series, list or array, optional
+        A selection of columns (associated to time series) in df. The default
+        is None.
+    sttime : str, optional
+        DESCRIPTION. The default is None.
+    entime : str, optional
+        DESCRIPTION. The default is None.
+    delta : int, optional
+        If provided, the . The default is None.
+
+    Returns
+    -------
+    sel : list
+        List containing the time series DataFrame column labels of the time
+        series respecting the conditions provided.
+    """
+    sel = []
+    if (sttime is not None) & (entime is not None):
         sttime, entime = pd.to_datetime(sttime), pd.to_datetime(entime)
-    for ts in meta.index:
+    cols = meta if meta is not None else df.columns
+    for ts in cols:
         start = df.index[df[ts].notna()][0]
         end = df.index[df[ts].notna()][-1]
-        if sttime is not None:
+        if (sttime is not None) & (entime is not None):
             if (start < sttime) & (end > entime):
-                insert += [ts]
+                sel += [ts]
         else:
             dt = end - start
             if dt.days >= delta:
-                insert += [ts]
-    return insert
+                sel += [ts]
+    return sel
             

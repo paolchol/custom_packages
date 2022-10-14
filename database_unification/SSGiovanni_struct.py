@@ -16,7 +16,7 @@ import numpy as np
 
 # %% Load
 
-meta = pd.read_csv('data/SSGiovanni/meta_original.csv')
+meta = pd.read_csv('data/SSGiovanni/ANAGRAFICA_elab.csv')
 data = pd.read_csv('data/SSGiovanni/data_original.csv')
 
 # %% Obtain meta and data in the standard format
@@ -24,10 +24,10 @@ data = pd.read_csv('data/SSGiovanni/data_original.csv')
 #complete meta with SIF codes
 codes = data.drop_duplicates('SIF', keep = 'last').drop(columns = data.iloc[:, 2:].columns.to_list()).copy()
 codes.iloc[5:, 1] = ['UN.PS.001', 'UN.PS.003']
-meta.set_index('Nome', inplace = True)
-meta = pd.merge(meta, codes, left_index = True, right_on = 'COD_LOC')
-meta.set_index('SIF', inplace = True)
-meta.index = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in meta.index]
+
+meta = meta.loc[meta['COD_LOCALE'].isin(codes['COD_LOC']), :]
+meta.set_index('CodiceSIF', inplace = True)
+meta.index = [f"0{int(idx)}" for idx in meta.index]
 meta.index.names = ['CODICE']
 meta['ORIGINE'] = 'SSGiovanni'
 
@@ -45,8 +45,7 @@ data = stdf.rearrange(index_label = 'DATA', setdate = True,
 
 # XX.PP codes are not in the superficial acquifer, export only the ones with
 # PS in the code
-idx = [code.split('.')[1] == 'PS' for code in meta['COD_LOC']]
-meta = meta.loc[idx, :]
+meta = meta.loc[meta['TIPOLOGIA'] == 'SUP', :]
 data = data.loc[:, data.columns.isin(meta.index)]
 
 meta.to_csv('data/SSGiovanni/meta_SSGiovanni.csv')
