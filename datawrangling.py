@@ -148,10 +148,11 @@ def mergets(left, right, codes):
         Time series dataframe to merge.
     right : pandas.DataFrame
         Time series dataframe to merge.
-    codes : pandas.Series
+    codes : pandas.Series or str
         Series with:
             values: codes associated to the right df
             index: codes associated to the left df, to perform the merge.
+        If it is a single code, insert it as a string.
 
     Returns
     -------
@@ -159,7 +160,7 @@ def mergets(left, right, codes):
         DataFrame with time series merged.
     """
     y = right[codes]
-    y.columns = codes.index
+    if isinstance(y, pd.Series): y.columns = codes.index
     out = joincolumns(pd.merge(left, y, how = 'outer', left_index = True, right_index = True))
     return out
 

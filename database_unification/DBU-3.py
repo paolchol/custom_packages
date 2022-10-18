@@ -72,8 +72,6 @@ metamerge = dw.join_twocols(metamerge, ['ORIGINE', 'ORIGINE_I2005'], add = True,
 metamerge = dw.join_twocols(metamerge, ['CODICE_SIF', 'CODICE_SIF_I2005'])
 metamerge = dw.joincolumns(metamerge, '_dbu', '_I2005')
 
-metamerge.to_csv('data/results/db-unification/meta_DBU-3.csv')
-
 # %% Merge time series
 
 headDBU = pd.read_csv('data/results/db-unification/head_DBU-2.csv', index_col='DATA')
@@ -89,4 +87,22 @@ vismerge = headmerge[codes.index]
 visdbu = headDBU[codes.index]
 dv.interactive_TS_visualization(vismerge, file = 'plot/dbu/added_ts_DBU-3.html')
 
+# %% Add the lake meta and time series
+
+lake_mt = pd.read_csv('data/Idroscalo2005/meta_lake.csv')
+lake_ts = pd.read_csv('data/Idroscalo2005/lake_levels_monthly.csv', index_col = 'DATA')
+lake_ts.index =  pd.DatetimeIndex(lake_ts.index)
+
+lake_mt['X_WGS84'], lake_mt['Y_WGS84'] = gd.transf_CRS(lake_mt['lat'], lake_mt['lon'], 'EPSG:4326', 'EPSG:32632', series = True)
+
+metamerge = pd.merge(metamerge, lake_mt, how = 'outer', left_index = True, right_on = 'CODICE')
+metamerge = dw.joincolumns(metamerge)
+metamerge.set_index('CODICE', inplace = True)
+
+lake_ts.rename(columns = {'level': 'idroscalo'}, inplace = True)
+headmerge = dw.mergets(headmerge, lake_ts, 'idroscalo')
+
+# %% Save DBU-3
+
 headmerge.to_csv('data/results/db-unification/head_DBU-3.csv')
+metamerge.to_csv('data/results/db-unification/meta_DBU-3.csv')

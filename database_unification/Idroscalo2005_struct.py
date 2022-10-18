@@ -45,3 +45,35 @@ head = data.pivot(columns = 'codice', values = 'head')
 
 meta.to_csv('data/Idroscalo2005/meta_Idroscalo2005.csv')
 head.to_csv('data/Idroscalo2005/head_Idroscalo2005.csv')
+
+# %% Lake levels
+
+#rearrange the lake levels dataset so it becomes possible to merge with DBU
+lake = pd.read_csv('data/Idroscalo2005/quote slm livelli lago.csv')
+
+lake.set_index('DATA', inplace = True)
+
+lake = lake.stack(dropna = False)
+
+months = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
+d = {month: index for index, month in enumerate(months, start = 1) if month}
+
+datecol = []
+for date in lake.index:
+    if (date[0].split('-')[0] == '29') & (d[date[0].split('-')[1]] == 2):
+           lake.drop(date, inplace = True)
+    else:
+        tool = str(date[0].split('-')[0]) + '-' + str(d[date[0].split('-')[1]]) + '-' + str(date[1])
+        datecol += [pd.to_datetime(tool, format = '%d-%m-%Y')]
+lake.reset_index(inplace = True, drop = True)
+lake.index = datecol
+lake.sort_index(inplace = True)
+lake.index.names, lake.name = ['DATA'], 'level'
+
+#resample the series to monthly
+import dataviz as dv
+dv.interactive_TS_visualization(lake.resample('MS').mean(), markers = True)
+
+#save the series
+lake.to_csv('data/Idroscalo2005/lake_levels_daily.csv')
+lake.resample('MS').mean().to_csv('data/Idroscalo2005/lake_levels_monthly.csv')

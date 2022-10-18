@@ -76,9 +76,9 @@ def transf_CRS(x, y, frm, to, series = False, **kwargs):
     Parameters
     ----------
     x : scalar or array
-        x coordinate (longitude).
+        x coordinate (latitude).
     y : scalar or array
-        y coordinate (latitude).
+        y coordinate (longitude).
     frm : Any
         The CRS of the coordinates provided.
         It can be in any format to indicate the CRS used in pyproj.Trasformer.from_crs.
@@ -95,8 +95,8 @@ def transf_CRS(x, y, frm, to, series = False, **kwargs):
     -------
     out : tuple
         When transforming to WGS84:
-         - out[0] contains the LATITUDE
-         - out[1] contains the LONGITUDE
+         - out[0] contains the LATITUDE or X
+         - out[1] contains the LONGITUDE or Y
     """
     if series:
         x = x.reset_index(drop = True).to_numpy()
