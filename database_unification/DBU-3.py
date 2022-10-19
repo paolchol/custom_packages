@@ -100,7 +100,8 @@ metamerge = dw.joincolumns(metamerge)
 metamerge.set_index('CODICE', inplace = True)
 
 lake_ts.rename(columns = {'level': 'idroscalo'}, inplace = True)
-headmerge = dw.mergets(headmerge, lake_ts, 'idroscalo')
+# headmerge = dw.mergets(headmerge, lake_ts, 'idroscalo')
+#the observation points doesn't fall in IT03GWBISSAPTA, so it is not merged
 
 # %% Save DBU-3
 

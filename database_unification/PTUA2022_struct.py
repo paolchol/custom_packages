@@ -16,7 +16,7 @@ import pandas as pd
 # %% Obtain a monthly dataset of the total head for each piezometer
 
 #Load the basin's piezometer dataset
-fname = 'data//PTUA2022/original/IT03GWBISSAPTA.csv'
+fname = 'data/PTUA2022/original/IT03GWBISSAPTA.csv'
 df = pd.read_csv(fname)
 #Set the data format
 df['DATA'] = pd.to_datetime(df['DATA'], format = '%d/%m/%Y')
@@ -25,15 +25,15 @@ head = df.pivot(index = 'DATA', columns = 'CODICE PUNTO', values = 'PIEZOMETRIA 
 #Set the database to monthly
 head = head.resample("1MS").mean()
 
-# head.to_csv('data/head_IT03GWBISSAPTA.csv')
+head.to_csv('data/PTUA2022/head_IT03GWBISSAPTA.csv')
 
 # %% Obtain the piezometer metadata of the GW basin considered 
 
 #Load the full metadata dataset
 meta = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv')
-#To extract only the metadata of the considered basin
-basin = fname.split('.')[0].split('/')[1]
-meta_sel = meta.loc[meta['BACINO_WISE'] == basin, :]
+meta['ORIGINE'] = 'PTUA2022'
+
+meta.to_csv('data/PTUA2022/meta_PTUA2022.csv', index = False)
 
 # %% Visualize the time series
 
@@ -48,3 +48,9 @@ for n in range(round(len(head.columns)/D)-1):
     s = e + 1
 
 dv.interactive_TS_visualization(head, 'date', 'total head', file = 'plot/db/original_TS_IT03GWBISSAPTA.html')
+
+# %% Possible operations on meta
+
+#To extract only the metadata of the considered basin
+basin = fname.split('.')[0].split('/')[-1]
+meta_sel = meta.loc[meta['BACINO_WISE'] == basin, :]

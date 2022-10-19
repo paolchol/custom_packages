@@ -21,7 +21,7 @@ import pandas as pd
 # %% Load the metadata
 
 #Metadata dei dati usati nel PTUA 2022
-meta2022 = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv', index_col = 'CODICE')
+meta2022 = pd.read_csv('data/PTUA2022/meta_PTUA2022.csv', index_col = 'CODICE')
 #Metadata dei dati usati nel PTUA 2003
 meta2003 = pd.read_csv('data/PTUA2003/meta_PTUA2003_TICINOADDA_filtered.csv', index_col = 'CODICE')
 #Database incrociato: contiene associazione tra codici SIF e PP
