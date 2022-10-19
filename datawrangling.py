@@ -160,7 +160,7 @@ def mergets(left, right, codes):
         DataFrame with time series merged.
     """
     y = right[codes]
-    if isinstance(y, pd.Series): y.columns = codes.index
+    if isinstance(codes, pd.Series): y.columns = codes.index
     out = joincolumns(pd.merge(left, y, how = 'outer', left_index = True, right_index = True))
     return out
 
