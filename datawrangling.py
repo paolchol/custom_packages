@@ -48,7 +48,6 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     if col_order is not None: df = df[col_order]
     return df
 
-
 def join_twocols(df, cols, onlyna = True, rename = None, add = False,
                  inplace = False):
     """
