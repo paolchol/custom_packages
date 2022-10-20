@@ -25,6 +25,8 @@ metamerge = pd.read_csv('data/results/db-unification/meta_DBU-COMPLETE.csv', ind
 headmerge = pd.read_csv('data/results/db-unification/head_DBU-COMPLETE.csv', index_col = 'DATA')
 
 tool = metamerge.copy()
+
+tool['CODICE_SIF'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in tool['CODICE_SIF']]
 tool['DATA_INIZIO'] = datecol_arrange(tool['DATA_INIZIO'])
 
 df = pd.DataFrame(headmerge.columns, columns = ['CODICE'])
@@ -47,7 +49,7 @@ print(f"Incremento medio di dati: {round(abs(sum(delta)/len(delta))/365, 2)} ann
 test = dw.join_twocols(test, ['DATA_INIZIO_x', 'DATA_INIZIO_y'], rename = 'DATA_INIZIO', onlyna = False)
 
 cols = test.columns.to_list()
-nc = cols[0:6] + [cols[30]] + cols[6:8] + cols[21:23] + cols[8:21] + cols[23:30]
+nc = cols[0:7] + [cols[31]] + cols[7:9] + cols[22:24] + cols[9:22] + cols[24:31]
 test = test[nc]
 
 test.rename(columns = {'X_WGS84': 'X', 'Y_WGS84': 'Y'}, inplace = True)
@@ -55,9 +57,19 @@ dw.join_twocols(test, ['NOTE', 'INFO'], rename = 'INFO', onlyna = False, add = T
 
 code_db = pd.read_csv('data/general/codes_SIF_PP.csv')
 
-idx = metamerge.index[metamerge.index.isin(code_db['CODICE_PP'])]
-tt = metamerge.loc[idx, 'CODICE_SIF']
+idx = test.index[test.index.isin(code_db['CODICE_PP'])]
 code_db.set_index('CODICE_PP', inplace = True)
-tt2 = code_db.loc[idx, 'CODICE_SIF']
+codes = code_db.loc[idx, 'CODICE_SIF']
 
-#merge mergemeta con tt2, poi fare join cols con onlyna = False
+test = pd.merge(test, codes, how = 'left', left_index = True, right_index = True)
+test = dw.joincolumns(test)
+
+idx = [code for code in test.index if code[0] != 'P']
+codes = code_db.loc[code_db.loc[:, 'CODICE_SIF'].isin(test.loc[idx, 'CODICE_SIF']), 'CODICE_SIF']
+idx = [pp for pp in codes.index if pp[0] == 'P']
+codes = pd.DataFrame(codes[idx])
+codes.reset_index(drop = False, inplace = True)
+
+test.reset_index(drop = False, inplace = True)
+t = pd.merge(test, pd.DataFrame(codes), how = 'left', left_on = 'CODICE_SIF', right_on = 'CODICE_SIF')
+t = dw.join_twocols(t, ['CODICE', 'CODICE_PP'], onlyna = False)
