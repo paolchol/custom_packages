@@ -323,10 +323,15 @@ to_insert.rename(columns = {'COD_PTUA16': 'BACINO_WISE',
 to_insert = dw.join_twocols(to_insert, ['TIPO', 'COMPARTO'], rename = "INFO", add = True, onlyna = False)
 to_insert['PROVINCIA'] = 'MI'
 to_insert['COMUNE'] = 'SESTO SAN GIOVANNI'
+to_insert['CODICE_SSG'] = to_insert['CODICE']
 
 metamerge = pd.merge(metamerge, to_insert, how = 'outer', left_index = True, right_on = 'CODICE')
 metamerge = dw.joincolumns(metamerge)
 metamerge.set_index('CODICE', inplace = True)
+
+tool = metamerge['CODICE_SSG'].copy()
+metamerge.drop(columns = 'CODICE_SSG', inplace = True)
+metamerge.insert(3, 'CODICE_SSG', tool)
 
 idx = metamerge.loc[to_insert['CODICE'], 'BACINO_WISE'] == 'IT03GWBISSAPTA'
 codes = to_insert.loc[idx.values, 'CODICE_SIF']

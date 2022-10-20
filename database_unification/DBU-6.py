@@ -88,10 +88,15 @@ to_insert.rename(columns = {'COD_PTUA16': 'BACINO_WISE',
 to_insert = dw.join_twocols(to_insert, ['TIPO', 'COMPARTO'], rename = "INFO", add = True, onlyna = False)
 to_insert['PROVINCIA'] = 'MI'
 to_insert['COMUNE'] = 'SESTO SAN GIOVANNI'
+to_insert['CODICE_SSG'] = to_insert['CODICE']
 
 metamerge = pd.merge(metaDBU, to_insert, how = 'outer', left_index = True, right_on = 'CODICE')
 metamerge = dw.joincolumns(metamerge)
 metamerge.set_index('CODICE', inplace = True)
+
+tool = metamerge['CODICE_SSG'].copy()
+metamerge.drop(columns = 'CODICE_SSG', inplace = True)
+metamerge.insert(3, 'CODICE_SSG', tool)
 
 #insert the time series
 headDBU = pd.read_csv('data/results/db-unification/head_DBU-5.csv', index_col = 'DATA')
