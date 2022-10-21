@@ -49,7 +49,12 @@ head.to_csv('data/Idroscalo2005/head_Idroscalo2005.csv')
 # %% Lake levels
 
 #rearrange the lake levels dataset so it becomes possible to merge with DBU
-lake = pd.read_csv('data/Idroscalo2005/quote slm livelli lago.csv')
+lake87 = pd.read_csv('data/Idroscalo2005/quote slm livelli lago.csv')
+lake03 = pd.read_csv('data/Idroscalo2005/original/lv_2003_2022.csv')
+lake03.columns = ['DATA'] + [f'{y}' for y in range(2003,2023)]
+
+lake = pd.merge(lake03, lake87, how = 'left', left_on = 'DATA', right_on = 'DATA')
+lake = dw.joincolumns(lake, col_order = ['DATA'] + [f'{y}' for y in range(1987,2023)])
 
 lake.set_index('DATA', inplace = True)
 
@@ -70,10 +75,10 @@ lake.index = datecol
 lake.sort_index(inplace = True)
 lake.index.names, lake.name = ['DATA'], 'level'
 
-#resample the series to monthly
 import dataviz as dv
 dv.interactive_TS_visualization(lake.resample('MS').mean(), markers = True)
 
 #save the series
 lake.to_csv('data/Idroscalo2005/lake_levels_daily.csv')
+#resample the series to monthly
 lake.resample('MS').mean().to_csv('data/Idroscalo2005/lake_levels_monthly.csv')
