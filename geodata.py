@@ -108,18 +108,9 @@ def transf_CRS(x, y, frm, to, series = False, **kwargs):
 # %% Find nearest things
 
 def find_nearestrastercell(raster, point):
-    x0, y0 = raster.bounds[0], raster.bounds[1] #lower left x, y ; upper right x, y
-    x1, y1 = raster.bounds[2], raster.bounds[3]
-    
-    if point.x < x0:
-        pass
-    elif point.x > x0:
-        pass
     
     
-    point.x
-    point.y
-        
+            
     pass
 
 def find_nearestpoint(df1, df2, id1 = 'CODE', coord1 = ['lon', 'lat'],
