@@ -11,6 +11,8 @@ As data wrangling I mean:
 import numpy as np
 import pandas as pd
 
+# %% Merge operations and utility
+
 def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     """
     Joins the overlapping columns in a merged dataframe.
@@ -49,7 +51,7 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     return df
 
 def join_twocols(df, cols, onlyna = True, rename = None, add = False,
-                 inplace = False):
+                 inplace = False, sep = '-'):
     """
     Uses the data in cols[1] to fill the nans in cols[0] (onlyna = True) or 
     to replace the values in cols[0] when an occurrence in cols[1] is found 
@@ -69,7 +71,14 @@ def join_twocols(df, cols, onlyna = True, rename = None, add = False,
         The default is True.
     rename : str, optional
         Name of the merged column. The default is None.
-
+    add : 
+        
+    inplace :
+        
+    sep : str, optional
+        Separator between the merged values in the final column. The default is
+        '-'.
+    
     Returns
     -------
     df : pandas.DataFrame
@@ -83,7 +92,7 @@ def join_twocols(df, cols, onlyna = True, rename = None, add = False,
     else:
         pos = df.loc[:, cols[1]].notna()
     if add:
-        vals = [f"{y}" if itsnan(x) else f"{x}-{y}" for x, y in zip(df.loc[pos, cols[0]], df.loc[pos, cols[1]])]
+        vals = [f"{y}" if itsnan(x) else f"{x}{sep}{y}" for x, y in zip(df.loc[pos, cols[0]], df.loc[pos, cols[1]])]
     else:
         vals = df.loc[pos, cols[1]]
     df.loc[pos, cols[0]] = vals
@@ -121,7 +130,6 @@ def mergemeta(left, right, link = None,*, firstmerge: dict, secondmerge: dict):
     out : pandas.DataFrame
         A merged DataFrame of 'left' and 'right'. If 'link' is provided, it
         will be used as a link between the two dataframes.
-
     """
     if link is not None:
         right = pd.merge(right, link, how = 'inner', **firstmerge)
@@ -129,7 +137,7 @@ def mergemeta(left, right, link = None,*, firstmerge: dict, secondmerge: dict):
     out.reset_index(inplace = True)
     return out
 
-def mergets(left, right, codes):
+def mergets(left, right, codes, report = False, tag = None):
     """
     Function to merge two time series dataframes based on associated codes
     provided.
@@ -152,6 +160,10 @@ def mergets(left, right, codes):
             values: codes associated to the right df
             index: codes associated to the left df, to perform the merge.
         If it is a single code, insert it as a string.
+    report : bool, optional
+        If report = True, a report is returned containing the codes of the 
+        merged time series along with the starting and ending dates of the added
+        ts. The default is False.
 
     Returns
     -------
@@ -161,7 +173,48 @@ def mergets(left, right, codes):
     y = right[codes]
     if isinstance(codes, pd.Series): y.columns = codes.index
     out = joincolumns(pd.merge(left, y, how = 'outer', left_index = True, right_index = True))
+    if report:
+        rprt = pd.DataFrame(y.columns)
+        rprt['start'] = [y[col].first_valid_index().date() for col in y.columns]
+        rprt['end'] = [y[col].last_valid_index().date() for col in y.columns]
+        if tag is not None:
+            rprt['tag'] = tag
+        return out, rprt
     return out
+
+def merge_rprt(left, right):
+    """
+    Merge two "rprt" objects (reports) generated from the function mergets.
+    If some codes are in both reports it adds their values in a unique column
+    with values separated by '/'.
+
+    Parameters
+    ----------
+    left, right : pandas.DataFrame
+        DataFrames in the structure of 'rprt' from mergets.
+
+    Returns
+    -------
+    out : pandas.DataFrame
+        Merged dataframe from left and right.
+    """
+    if sum(right.index.isin(left.index)) > 0:
+        out = pd.merge(left, right, how = 'outer', left_index = True, right_index = True)
+        out = join_twocols(out, ['tag_x', 'tag_y'], onlyna = False, add = True, rename = 'tag', sep ='/')
+        out = join_twocols(out, ['start_x', 'start_y'], onlyna = False, add = True, rename = 'start', sep = '/')
+        out = join_twocols(out, ['end_x', 'end_y'], onlyna = False, add = True, rename = 'end', sep = '/')
+    else:
+        out = pd.concat([left, right])
+    return out
+    
+# %% General operations
+
+def create_datecol(df, d = None, year = None, month = None):
+    df = df.copy()
+    df[month] = [d[m] for m in df[month]]
+    datecol = [f"{x}-{y}-1" for x, y in zip(df[year], df[month])]
+    datecol = pd.to_datetime(datecol, format = '%Y-%m-%d')
+    return datecol
 
 def print_colN(df):
     for i, col in enumerate(df.columns):
@@ -185,12 +238,7 @@ def remove_wcond(df, cond):
     """
     return df[cond]
 
-def create_datecol(df, d = None, year = None, month = None):
-    df = df.copy()
-    df[month] = [d[m] for m in df[month]]
-    datecol = [f"{x}-{y}-1" for x, y in zip(df[year], df[month])]
-    datecol = pd.to_datetime(datecol, format = '%Y-%m-%d')
-    return datecol
+# %% stackedDF: class for stacked dataframe management
 
 class stackedDF():
     """
@@ -323,6 +371,8 @@ class stackedDF():
         df.drop(columns = [self.y, 'index'], inplace = True)
         df.set_index('datecol', inplace = True)
         return df
+
+# %% Work in progress
 
 class DBU():
     """
