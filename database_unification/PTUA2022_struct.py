@@ -11,6 +11,7 @@ author: paolo
 
 # %% Setup
 
+import numpy as np
 import pandas as pd
 
 # %% Obtain a monthly dataset of the total head for each piezometer
@@ -32,6 +33,9 @@ head.to_csv('data/PTUA2022/head_IT03GWBISSAPTA.csv')
 #Load the full metadata dataset
 meta = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv')
 meta['ORIGINE'] = 'PTUA2022'
+#correct "DATA_INIZIO"
+meta['DATA_INIZIO'] = [head[col].first_valid_index() if col in head.columns else np.nan for col in meta['CODICE']]
+# meta['DATA_FINE'] = [head[col].last_valid_index() if col in head.columns else np.nan for col in meta['CODICE']]
 
 meta.to_csv('data/PTUA2022/meta_PTUA2022.csv', index = False)
 

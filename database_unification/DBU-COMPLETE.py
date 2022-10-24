@@ -110,7 +110,7 @@ head.index = pd.DatetimeIndex(head.index)
 
 codes = metamerge.loc[metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_PTUA2003'].dropna()
 codes = pd.concat([codes, metamerge.loc[metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_SIF'].dropna()])
-headmerge = dw.mergets(headDBU, head, codes)
+headmerge, rprtmerge = dw.mergets(headDBU, head, codes, report = True, tag = 'PTUA2003')
 
 # %% DBU-2
 #CAP
@@ -180,7 +180,8 @@ metamerge = dw.joincolumns(metamerge, '_dbu', '_I2005')
 
 idx = (metamerge['CODICE_SIF'].isin(meta.index)) & (metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA')
 codes = metamerge.loc[idx, 'CODICE_SIF']
-headmerge = dw.mergets(headmerge, head, codes)
+headmerge, rprt = dw.mergets(headmerge, head, codes, report = True, tag = 'Idroscalo2005')
+rprtmerge = dw.merge_rprt(rprtmerge.set_index('CODICE'), rprt.set_index('CODICE'))
 
 #add lake
 lake_mt = pd.read_csv('data/Idroscalo2005/meta_lake.csv')
@@ -226,9 +227,11 @@ codelst = codelst.loc[codelst['CODICE_link'].isin(metamerge.loc[idx, :].index), 
 codelst.reset_index(drop = False, inplace = True)
 codelst.set_index('CODICE_link', inplace = True)
 codelst = codelst.squeeze()
-headmerge = dw.mergets(headmerge, head, codelst)
+headmerge, rprt = dw.mergets(headmerge, head, codelst, report = True, tag = 'OLONA')
+rprtmerge = dw.merge_rprt(rprtmerge, rprt.set_index('CODICE_link'))
 
 # %% DBU-5
+#Milano1950
 
 meta = pd.read_csv('data/Milano1950/meta_Milano1950.csv', index_col = 'CODICE')
 head = pd.read_csv('data/Milano1950/head_Milano1950.csv', index_col = 'DATA')
@@ -258,7 +261,8 @@ codelst = codelst.loc[codelst['CODICE_link'].isin(metamerge.loc[idx, :].index), 
 codelst.reset_index(drop = False, inplace = True)
 codelst.set_index('CODICE_link', inplace = True)
 codelst = codelst.squeeze()
-headmerge = dw.mergets(headmerge, head, codelst)
+headmerge, rprt = dw.mergets(headmerge, head, codelst, report = True, tag = 'Milano1950')
+rprtmerge = dw.merge_rprt(rprtmerge, rprt.set_index('CODICE_link'))
 
 notmrg = head.loc[:, np.invert(head.columns.isin(codelst))].copy()
 remove = ['SIF_NA']
@@ -294,9 +298,11 @@ idx = metamerge.loc[to_insert['CODICE'], 'BACINO_WISE'] == 'IT03GWBISSAPTA'
 codes = to_insert.loc[idx.values, 'CODICE_SIF']
 codes.index = to_insert.loc[idx.values, 'CODICE']
 
-headmerge = dw.mergets(headmerge, head, codes)
+headmerge, rprt = dw.mergets(headmerge, head, codes, report = True, tag = 'Milano1950')
+rprtmerge = dw.merge_rprt(rprtmerge, rprt.set_index('CODICE'))
 
 #%% DBU-6
+#SSGiovanni
 
 meta = pd.read_csv('data/SSGiovanni/meta_SSGiovanni.csv', index_col = 'CODICE')
 head = pd.read_csv('data/SSGiovanni/head_SSGiovanni.csv', index_col = 'DATA')
@@ -337,17 +343,17 @@ idx = metamerge.loc[to_insert['CODICE'], 'BACINO_WISE'] == 'IT03GWBISSAPTA'
 codes = to_insert.loc[idx.values, 'CODICE_SIF']
 codes.index = to_insert.loc[idx.values, 'CODICE']
 
-headmerge = dw.mergets(headmerge, head, codes)
+headmerge, rprt = dw.mergets(headmerge, head, codes, report = True, tag = 'SSGiovanni')
+rprtmerge = dw.merge_rprt(rprtmerge, rprt.set_index('CODICE'))
 
 # %% Final operations
 
+#report on the merge
+rprtmerge.index.names = ['CODICE']
 
 
 # %% Export
 
 metamerge.to_csv('data/results/db-unification/meta_DBU-COMPLETE.csv')
 headmerge.to_csv('data/results/db-unification/head_DBU-COMPLETE.csv')
-
-
-# test = pd.read_csv('data/results/db-unification/head_DBU-6.csv', index_col = 'DATA')
-# test['CODICE_SIF'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in test['CODICE_SIF']]
+rprtmerge.to_csv('data/results/db-unification/report_merge_DBU-COMPLETE.csv')

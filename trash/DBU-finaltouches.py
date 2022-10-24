@@ -23,6 +23,7 @@ def datecol_arrange(datecol):
 
 metamerge = pd.read_csv('data/results/db-unification/meta_DBU-COMPLETE.csv', index_col = 'CODICE')
 headmerge = pd.read_csv('data/results/db-unification/head_DBU-COMPLETE.csv', index_col = 'DATA')
+rprtmerge = pd.read_csv('data/results/db-unification/report_merge_DBU-COMPLETE.csv', index_col = 'CODICE')
 
 tool = metamerge.copy()
 
@@ -42,9 +43,7 @@ new = pd.to_datetime(test['DATA_INIZIO_y'], format = '%Y-%m-%d')
 delta = new - old
 delta = delta[pd.notnull(delta)]
 delta = [dt.days for dt in delta]
-delta = [dt for dt in delta if dt < 0]
-print(f"Numero di serie che hanno avuto un incremento di dati: {len(delta)}")
-print(f"Incremento medio di dati: {round(abs(sum(delta)/len(delta))/365, 2)} anni")
+delta = [dt for dt in delta if dt != 0]
 
 test = dw.join_twocols(test, ['DATA_INIZIO_x', 'DATA_INIZIO_y'], rename = 'DATA_INIZIO', onlyna = False)
 
@@ -73,3 +72,18 @@ codes.reset_index(drop = False, inplace = True)
 test.reset_index(drop = False, inplace = True)
 t = pd.merge(test, pd.DataFrame(codes), how = 'left', left_on = 'CODICE_SIF', right_on = 'CODICE_SIF')
 t = dw.join_twocols(t, ['CODICE', 'CODICE_PP'], onlyna = False)
+
+#print
+print(f"Numero totale di serie aggregate o aggiunte al database: {rprtmerge.shape[0]}")
+print(f"Numero di serie che hanno avuto un allungamento della serie storica: {len(delta)}")
+print(f"Numero di serie aggiunte ex-novo: {len([code for code in rprtmerge.index if code[0] != 'P'])}")
+print(f"Incremento medio di dati: {round(abs(sum(delta)/len(delta))/365, 2)} anni")
+
+#change the code also in report
+
+# %% trials
+
+#prova: ripartizione dell'origine dei dati per serie aggiunte e aggiornate
+# import matplotlib.pyplot as plt
+# plt.hist(rprtmerge['tag'])
+# plt.show()
