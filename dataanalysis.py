@@ -97,7 +97,7 @@ class CheckNA():
                 NAs.iloc[i,1] = False
         return self.filtered, NAs
 
-# %% Mann-Kendall and Sen's slope
+# %% Mann-Kendall test and Sen's slope estimation
 
 def mann_kendall(vals, confidence = 0.95):
     #source: https://github.com/manaruchi/MannKendall_Sen_Rainfall
