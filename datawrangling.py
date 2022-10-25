@@ -216,6 +216,17 @@ def create_datecol(df, d = None, year = None, month = None):
     datecol = pd.to_datetime(datecol, format = '%Y-%m-%d')
     return datecol
 
+def datecol_arrange(datecol):
+    dates = []
+    for date in datecol:
+        if date == date:
+            s = date.split('/')
+            s.reverse()
+            dates += ['-'.join(s)]
+        else:
+            dates += [np.nan]
+    return dates
+
 def print_colN(df):
     for i, col in enumerate(df.columns):
         print(f"{i}: {col}")
