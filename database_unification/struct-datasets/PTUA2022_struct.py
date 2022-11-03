@@ -43,15 +43,16 @@ meta.to_csv('data/PTUA2022/meta_PTUA2022.csv', index = False)
 
 import dataviz as dv
 
-D = 5
-s, e = 0, 0
-for n in range(round(len(head.columns)/D)-1):
-    e = s + D if s + D < len(head.columns) else len(head.columns)-1
-    dv.fast_TS_visualization(head.iloc[:, s:e])
-    print(s, e)
-    s = e + 1
+# D = 5
+# s, e = 0, 0
+# for n in range(round(len(head.columns)/D)-1):
+#     e = s + D if s + D < len(head.columns) else len(head.columns)-1
+#     dv.fast_TS_visualization(head.iloc[:, s:e])
+#     print(s, e)
+#     s = e + 1
 
-dv.interactive_TS_visualization(head, 'date', 'total head', file = 'plot/db/original_TS_IT03GWBISSAPTA.html')
+dv.interactive_TS_visualization(head, 'date', 'total head', markers = True, file = 'plot/db/original_TS_IT03GWBISSAPTA.html',
+                                title = 'Database di partenza - Origine: PTUA2022')
 
 # %% Possible operations on meta
 
