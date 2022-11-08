@@ -51,7 +51,7 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
     return df
 
 def join_twocols(df, cols, onlyna = True, rename = None, add = False,
-                 inplace = False, sep = '-'):
+                 inplace = False, sep = '-', drop = True):
     """
     Uses the data in cols[1] to fill the nans in cols[0] (onlyna = True) or 
     to replace the values in cols[0] when an occurrence in cols[1] is found 
@@ -78,6 +78,7 @@ def join_twocols(df, cols, onlyna = True, rename = None, add = False,
     sep : str, optional
         Separator between the merged values in the final column. The default is
         '-'.
+    drop :
     
     Returns
     -------
@@ -96,7 +97,7 @@ def join_twocols(df, cols, onlyna = True, rename = None, add = False,
     else:
         vals = df.loc[pos, cols[1]]
     df.loc[pos, cols[0]] = vals
-    df.drop(columns = cols[1], inplace = True)
+    if drop: df.drop(columns = cols[1], inplace = True)
     if rename is not None: df.rename(columns = {f'{cols[0]}': rename}, inplace = True)
     if not inplace: return df
 
@@ -311,7 +312,6 @@ class stackedDF():
             d = {month: index for index, month in enumerate(months, start = 1) if month}
             where month is the list containing the months columns labels
     """
-    
     def __init__(self, df, dftype = 'monthscols', yearcol = None,
                  datecol = None, d = None):        
         self.df = df.copy()
@@ -325,6 +325,9 @@ class stackedDF():
         if (dftype == 'monthscols') & (d is None):
             print("ERROR: d is necessary when dftype is 'monthscols'")
         self.d = d
+    
+    #Methods
+    #-------
     
     def rearrange(self, index_label = None, store = False, setdate = False,
                   rule = '1MS',*, dateargs: dict, pivotargs: dict):
@@ -411,6 +414,92 @@ class stackedDF():
         df.drop(columns = [self.y, 'index'], inplace = True)
         df.set_index('datecol', inplace = True)
         return df
+
+# %% From meta and ts to a single dataframe
+
+class join_metats():
+    """
+    Joins two dataframes ('meta' and 'ts') in a single dataframe
+    
+    Parameters for __init__
+    -----------------------
+    meta : pandas.DataFrame
+        A DataFrame with rows containing the metadata of the time series 
+        contained in 'ts'. 'meta' and 'ts' are linked through 'ts' column labels,
+        stored in column 'idcol' in 'meta'.
+    ts : pandas.DataFrame
+        A DataFrame with columns containing the time series which metadata are
+        contained in 'meta'.
+    idcol : str
+        The label of the column in meta containing the IDs used for ts columns
+        labels.    
+    """
+    def __init__(self, meta, ts, idcol):
+        self.meta = meta.copy()
+        self.ts = ts.copy()
+        self.id = idcol
+    
+    #Methods
+    #-------
+    
+    def to_webgis(self, anfields, ancouples, pzfields, pzcouples, idcol,
+                  ids = None, stacklab = None):
+        """
+        Returns the database in a format which can be uploaded in a WebGIS
+
+        Parameters
+        ----------
+        anfields : TYPE
+            DESCRIPTION.
+        ancouples : TYPE
+            DESCRIPTION.
+        pzfields : TYPE
+            DESCRIPTION.
+        pzcouples : TYPE
+            DESCRIPTION.
+        idcol : TYPE
+            DESCRIPTION.
+        ids : TYPE, optional
+            DESCRIPTION. The default is None.
+        stacklab : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+        TYPE
+            DESCRIPTION.
+
+        """
+        # an - Anagrafica (metadata)
+        an = pd.DataFrame(np.zeros((self.meta.shape[0],len(anfields))), columns = anfields)
+        an[:] = np.nan
+        for tag in ancouples:
+            an[tag] = self.meta[ancouples[tag]]
+        if ids is not None:
+            an[ids[0]] = [x for x in range(1, an.shape[0]+1)]
+        # dpz - Piezometric data
+        dpz = self.ts.stack().reset_index(drop = False)
+        if stacklab is not None:
+            dpz.columns = stacklab
+        dump = self.meta.loc[self.meta[self.id].isin(self.ts.columns), :].copy()
+        dump.reset_index(drop = True, inplace = True)
+        tool = pd.DataFrame(np.zeros((dump.shape[0],len(pzfields))), columns = pzfields)
+        tool[:] = np.nan
+        for tag in pzcouples:
+            tool[tag] = dump[pzcouples[tag]]
+        if ids is not None:
+            tool[ids[1]] = an.loc[an[idcol].isin(tool[idcol]), ids[0]].values        
+        dpz = joincolumns(pd.merge(dpz, tool, how = 'right', left_on = idcol, right_on = idcol))
+        if ids is not None:
+            dpz[ids[0]] = [x for x in range(1, dpz.shape[0]+1)]
+        dpz = dpz[pzfields]
+        return an, dpz
+    
+    def to_stackeDF(self):
+        #transform to a format passable to the class stackeDF
+        pass
 
 # %% Work in progress
 

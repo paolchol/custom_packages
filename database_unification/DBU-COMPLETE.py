@@ -373,6 +373,11 @@ cols = metamerge.columns.to_list()
 nc = cols[0:7] + [cols[31]] + cols[7:9] + cols[22:24] + cols[9:22] + cols[24:31]
 metamerge = metamerge[nc]
 
+# - Set QUOTA_MISU equal to QUOTA_PC_S if missing
+metamerge.loc[metamerge['QUOTA_MISU'] == 0, 'QUOTA_MISU'] = metamerge.loc[metamerge['QUOTA_MISU'] == 0, 'QUOTA_PC_S']
+#drop remaining points with no z field associated
+metamerge.drop(index = metamerge.loc[metamerge['QUOTA_MISU'] == 0, :].index, inplace = True)
+
 # - Rename the coordinate columns and merge the info columns
 metamerge.rename(columns = {'X_WGS84': 'X', 'Y_WGS84': 'Y'}, inplace = True)
 dw.join_twocols(metamerge, ['NOTE', 'INFO'], rename = 'INFO', onlyna = False, add = True, inplace = True)
@@ -415,7 +420,12 @@ rprtmerge.set_index('CODICE', inplace = True)
 # -- Replace the codes in metamerge
 metamerge.reset_index(drop = False, inplace = True)
 metamerge = dw.join_twocols(metamerge, ['CODICE', 'CODICE_PP'], onlyna = False)
-
+metamerge.set_index('CODICE', inplace = True)
+# - Clean 'CODICE_SIF' column
+for x in metamerge['CODICE_SIF']:
+    if x == x:
+        if str(x)[0] == 'P':
+            metamerge.loc[metamerge['CODICE_SIF'] == x, 'CODICE_SIF'] = np.nan
 
 # - Print information on the completed merge
 print(f"Numero totale di serie aggregate o aggiunte al database: {rprtmerge.shape[0]}")
