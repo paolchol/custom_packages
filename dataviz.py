@@ -5,11 +5,22 @@ Collection of custom functions for data visualization
 author: paolo
 """
 
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import plotly.express as px
 from plotly.offline import plot
-import matplotlib.pyplot as plt
-import numpy as np
+
+# %% Set plot resolution
+
+def set_res(res):
+    matplotlib.rcParams['figure.dpi'] = res
+
+# %% General plot
+
+def fast_boxplot(df):
+    df.boxplot()
 
 def fast_TS_visualization(df):
     plt.figure()
@@ -32,9 +43,6 @@ def interactive_TS_visualization(df, xlab = 'X', ylab = 'Y', file = 'temp.html',
         **kwargs
         )
     plot(figure, filename = file)
-
-def fast_boxplot(df):
-    df.boxplot()
 
 # %% Plot SGI
 

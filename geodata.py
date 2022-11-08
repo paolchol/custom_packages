@@ -25,46 +25,88 @@ def plot_raster(raster, values = None):
     image = rasterio.plot.show(raster, ax = ax)
     fig.colorbar(base, ax = ax)
     plt.show()
-
-def show_mappoints(df, lat, lon, file = 'temp_map.html', **kwargs):
-    #https://plotly.com/python/reference/scattermapbox/
-    fig = px.scatter_mapbox(df, lat, lon, **kwargs)
-    fig.update_layout(
-        mapbox_style = "stamen-terrain",
-        mapbox_zoom = 4, #mapbox_center_lat = 41,
-        margin = {"r":0,"t":0,"l":0,"b":0}
-        )
-    fig.update_traces(
-        showlegend = False,
-        marker_size = 20,
-        opacity = 0.5
-        )
-    plot(fig, filename = file)
     
-def trial_show_mappoints(df, lat, lon, file = 'temp_map.html',
+def show_mappoints(df, lat, lon, file = 'temp_map.html', zoom = 5,
                          *, scatter = None, layout = None, traces = None):
-    #https://plotly.com/python/reference/scattermapbox/
-    if scatter is not None:
-        fig = px.scatter_mapbox(df, lat, lon, **scatter)
-    else:
+    """
+    Plots a map with points corresponding to df's rows
+
+    Parameters
+    ----------
+    df : TYPE
+        DESCRIPTION.
+    lat : TYPE
+        DESCRIPTION.
+    lon : TYPE
+        DESCRIPTION.
+    file : TYPE, optional
+        DESCRIPTION. The default is 'temp_map.html'.
+    
+    **kwargs:
+    scatter : dict, optional
+        **kwargs for the plotly.express.scatter_mapbox function. Function
+        documentation: https://plotly.com/python/reference/scattermapbox/
+        The default is None.
+    layout : dict, optional
+        **kwargs for the fig.update_layout function. The default is None.
+    traces : dic, optional
+        **kwargs for the fig.update_traces function. The default is None.
+    """
+    if scatter is None:
         fig = px.scatter_mapbox(df, lat, lon)
+    else:
+        fig = px.scatter_mapbox(df, lat, lon, **scatter)
     if layout is None:
+        ctrlat = df[lat].mean() if isinstance(df[lat], pd.Series) else None
+        ctrlon = df[lon].mean() if isinstance(df[lon], pd.Series) else None
+        #cercare standard value fi mapbox_center_lat e modificare None
         fig.update_layout(
             mapbox_style = "stamen-terrain",
-            mapbox_zoom = 4, #mapbox_center_lat = 41,
+            mapbox_zoom = zoom,
+            mapbox_center_lat = ctrlat, mapbox_center_lon = ctrlon,
             margin = {"r":0,"t":0,"l":0,"b":0}
             )
     else:
         fig.update_layout(**layout)
     if traces is None:
         fig.update_traces(
-            showlegend = False,
-            #fare in modo che la legenda non sovrasti la mappa come succedeva
             marker_size = 20,
-            opacity = 0.5
+            opacity = 0.7
             )
     else:
         fig.update_traces(**traces)
+    plot(fig, filename = file)
+
+def show_mappoints_std(df, lat, lon, file = 'temp_map.html', zoom = 6, **kwargs):
+    """
+    Standardized version of show_mappoints
+
+    Parameters
+    ----------
+    df : TYPE
+        DESCRIPTION.
+    lat : TYPE
+        DESCRIPTION.
+    lon : TYPE
+        DESCRIPTION.
+    file : TYPE, optional
+        DESCRIPTION. The default is 'temp_map.html'.
+    **kwargs : TYPE
+        DESCRIPTION.
+    """
+    ctrlat = df[lat].mean() if isinstance(df[lat], pd.Series) else None
+    ctrlon = df[lon].mean() if isinstance(df[lon], pd.Series) else None
+    fig = px.scatter_mapbox(df, lat, lon, **kwargs)
+    fig.update_layout(
+        mapbox_style = "stamen-terrain",
+        mapbox_zoom = zoom,
+        mapbox_center_lat = ctrlat, mapbox_center_lon = ctrlon,
+        margin = {"r":0,"t":0,"l":0,"b":0}
+        )
+    fig.update_traces(
+        marker_size = 20,
+        opacity = 0.7
+        )
     plot(fig, filename = file)
 
 # %% Operations on coordinates
