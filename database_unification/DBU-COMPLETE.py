@@ -180,6 +180,10 @@ metamerge = dw.joincolumns(metamerge, '_dbu', '_I2005')
 
 idx = (metamerge['CODICE_SIF'].isin(meta.index)) & (metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA')
 codes = metamerge.loc[idx, 'CODICE_SIF']
+
+#test diventerà poi headcorr
+test = da.correct_quota(meta, head, metamerge, codes, quotacols = ['z', 'QUOTA_MISU'], printval = True)
+
 headmerge, rprt = dw.mergets(headmerge, head, codes, report = True, tag = 'Idroscalo2005')
 rprtmerge = dw.merge_rprt(rprtmerge.set_index('CODICE'), rprt.set_index('CODICE'))
 

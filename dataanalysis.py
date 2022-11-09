@@ -217,6 +217,51 @@ def step_trend(df, step, output = 'ss', dropna = True, **kwargs):
             start = end
     return db
 
+# %% Groundwater-specific operations
+
+def correct_quota(meta, ts, metacorr, codes, quotacols, printval = False):
+    """
+    Correct the time series which have been measured at a different quota 
+    with respect to a correct quota, providing two metadata datasets.
+
+    Parameters
+    ----------
+    meta : pandas.DataFrame
+        Metadata of the time series to be corrected.
+    ts : pandas.DataFrame
+        DataFrame containing the time series to be corrected. The columns
+        names are the series' codes.
+    metacorr : pandas.DataFrame
+        Metadata of the correct time series.
+    codes : pandas.Series
+        Series containing the corresponding couples of codes in the two metadata
+        dataframes.
+        Series with:
+            values: codes associated to meta
+            index: codes associated to metacorr
+    printval : bool, optional
+        If True, prints the values of the quota in the two dataframes. The 
+        default is False.
+    
+    Returns
+    -------
+    tscorr : pandas.DataFrame
+        DataFrame containing the time series corrected.
+    """
+    tscorr = ts.copy()
+    for code in codes.index:
+        if meta.loc[codes[code], quotacols[0]] != metacorr.loc[code, quotacols[1]]:
+            sogg = meta.loc[codes[code], quotacols[0]] - ts[codes[code]]
+            tscorr[codes[code]] = metacorr.loc[code, quotacols[1]] - sogg
+            if printval:
+                print(code)
+                print('meta: ' + str(meta.loc[codes[code], quotacols[0]]))
+                print('metacorr: ' + str(metacorr.loc[code, quotacols[1]]))
+    return tscorr
+    
+    
+
+
 # %% General operations
 
 def print_row(df, row, cond = True):
