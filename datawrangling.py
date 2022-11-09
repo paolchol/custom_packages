@@ -417,7 +417,7 @@ class stackedDF():
 
 # %% From meta and ts to a single dataframe
 
-class join_metats():
+class arrange_metats():
     """
     Joins two dataframes ('meta' and 'ts') in a single dataframe
     

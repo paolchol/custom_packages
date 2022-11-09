@@ -16,7 +16,7 @@ head = pd.read_csv('data/results/db-unification/head_DBU-COMPLETE.csv', index_co
 rprt = pd.read_csv('data/results/db-unification/report_merge_DBU-COMPLETE.csv', index_col = 'CODICE')
 
 meta.reset_index(drop = False, inplace = True)
-j = dw.join_metats(meta, head, 'CODICE')
+j = dw.arrange_metats(meta, head, 'CODICE')
 
 anfields = ['gid','id_punto','id_originale','id_ente',
             'tipo_punto','id_acquifero','id_hydros','presenza_strat',
