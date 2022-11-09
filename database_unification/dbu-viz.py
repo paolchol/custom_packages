@@ -54,7 +54,8 @@ viz = meta.loc[meta['BACINO_WISE'] == 'IT03GWBISSAPTA', :].copy().reset_index()
 gd.show_mappoints(meta.reset_index(), 'lat', 'lon',
                   file = 'plot/dbu/map_DBU-COMPLETE.html',
                   scatter = dict(color = 'ORIGINE',
-                                 hover_name = 'CODICE'),
+                                 hover_name = 'CODICE',
+                                 title = 'Database unificato: distribuzione spaziale'),
                   
                   layout = dict(mapbox_style = "stamen-terrain",
                                 mapbox_zoom = 7,

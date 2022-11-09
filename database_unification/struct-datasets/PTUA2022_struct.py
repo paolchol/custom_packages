@@ -35,7 +35,6 @@ meta = pd.read_csv('data/PTUA2022/metadata_piezometri_ISS.csv')
 meta['ORIGINE'] = 'PTUA2022'
 #correct "DATA_INIZIO"
 meta['DATA_INIZIO'] = [head[col].first_valid_index() if col in head.columns else np.nan for col in meta['CODICE']]
-# meta['DATA_FINE'] = [head[col].last_valid_index() if col in head.columns else np.nan for col in meta['CODICE']]
 
 meta.to_csv('data/PTUA2022/meta_PTUA2022.csv', index = False)
 
@@ -53,6 +52,60 @@ import dataviz as dv
 
 dv.interactive_TS_visualization(head, 'date', 'total head', markers = True, file = 'plot/db/original_TS_IT03GWBISSAPTA.html',
                                 title = 'Database di partenza - Origine: PTUA2022')
+
+# %% Visualize histogram
+
+import dataanalysis as da
+import matplotlib.pyplot as plt
+
+#calcolare numero e percentuale di serie storiche aggiunte
+# grafico a barre/istogramma: lunghezza delle serie in anni
+
+meta['DATA_FINE'] = [head[col].last_valid_index() if col in head.columns else np.nan for col in meta['CODICE']]
+meta.set_index('CODICE', inplace = True)
+tool = meta.loc[meta['BACINO_WISE'] == 'IT03GWBISSAPTA', ['DATA_INIZIO', 'DATA_FINE']].copy()
+tool['delta'] = pd.to_datetime(tool['DATA_FINE']) - pd.to_datetime(tool['DATA_INIZIO'])
+tool['delta'] = [x.days/365 for x in tool['delta']]
+
+cna = da.CheckNA(head)
+cna.check()
+tool = tool.merge(cna.output, how = 'left', left_index = True, right_on = 'ID')
+tool['delta_corr'] = tool['delta'] * (100 - tool['perc_NA'])/100
+tool.drop(columns = ['DATA_INIZIO', 'DATA_FINE', 'perc_NA'], inplace = True)
+tool.set_index('ID', inplace = True)
+tool.index.names = ['CODICE']
+
+#Set the resolution 
+dv.set_res(500)
+
+labels = ['Lunghezza apparente', 'Lunghezza reale']
+#Lunghezza apparente = Fine - Inizio
+#Lunghezza reale: (Fine - Inizio) x Percentuale dati presenti
+
+plt.hist(tool, bins = 'auto', histtype = 'barstacked',
+         label = labels, color = ['tab:blue', 'tab:olive'])
+plt.xlabel('Quantità di dati nella serie storica [anni]')#, {'fontname': 'Arial'})
+plt.ylabel('Numero di serie storiche')
+plt.title('Ripartizione delle serie storiche in base alla loro popolazione')
+plt.ylim([0,22.5])
+plt.text(12.5, 17.5, f"Numero di serie storiche: {tool.shape[0]}")
+plt.legend(loc = 'upper right')
+plt.savefig('plot/dbu/hist_PTUA2022.png')
+plt.show()
+
+#Visualizzazione alternativa:
+fig = plt.figure()
+ax = plt.subplot(111)
+ax.hist(tool, bins = 'auto', histtype = 'barstacked',
+         label = labels, color = ['tab:blue', 'tab:olive'])
+box = ax.get_position()
+ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                 box.width, box.height * 0.9])
+ax.legend(loc='upper center', bbox_to_anchor = (0.5, 1.1),
+          fancybox = False, shadow = True, ncol = 2)
+fig.layout(title = 'Ripartizione delle serie storiche in base alla loro popolazione')
+
+plt.show()
 
 # %% Possible operations on meta
 
