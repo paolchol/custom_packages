@@ -21,21 +21,29 @@ meta['CODICE_SIF'] = [f"0{int(idx)}" if not np.isnan(idx) else np.nan for idx in
 head = pd.read_csv('data/results/db-unification/head_DBU-COMPLETE.csv', index_col = 'DATA')
 rprt = pd.read_csv('data/results/db-unification/report_merge_DBU-COMPLETE.csv', index_col = 'CODICE')
 
+hcor = pd.read_csv('data/results/db-unification/headcorr_DBU-COMPLETE.csv', index_col = 'DATA')
+
 # %% Visualizza serie aggiunte e ampliate
 
 idx = meta['ORIGINE'] != 'PTUA2022'
 sel = meta.index[idx]
 ts = head.loc[:, head.columns.isin(sel)]
+tscor = hcor.loc[:, hcor.columns.isin(sel)]
 
 #Visualizza con il codice come etichetta
 dv.interactive_TS_visualization(ts, xlab = 'Data', ylab = 'Livello piezometrico [m s.l.m.]',
                                 file = 'plot/dbu/added_enhanced_DBU-COMPLETE.html',
                                 markers = True, title = "Serie aggiunte o ampliate nell'aggregazione dei database - Non processate")
 #Visualizza con il comune come etichetta
-ts.columns = dw.enum_instances(meta.loc[ts.columns, 'COMUNE'], ['MILANO']) #dai valore univoco ai comuni
+ts.columns = dw.enum_instances(meta.loc[ts.columns, 'COMUNE'], ['MILANO', 'SESTO SAN GIOVANNI']) #dai valore univoco ai comuni
 dv.interactive_TS_visualization(ts, xlab = 'Data', ylab = 'Livello piezometrico [m s.l.m.]',
                                 file = 'plot/dbu/added_enhanced_DBU-COMPLETE_COMUNE.html',
                                 markers = True, title = "Serie aggiunte o ampliate nell'aggregazione dei database - Non processate")
+#Visualizza il database corretto
+tscor.columns = dw.enum_instances(meta.loc[tscor.columns, 'COMUNE'], ['MILANO', 'SESTO SAN GIOVANNI']) #dai valore univoco ai comuni
+dv.interactive_TS_visualization(tscor, xlab = 'Data', ylab = 'Livello piezometrico [m s.l.m.]',
+                                file = 'plot/dbu/added_enhanced_DBU-COMPLETE_COMUNE_headcorr.html',
+                                markers = True, title = "Serie aggiunte o ampliate nell'aggregazione dei database - Quota corretta prima dell'aggiunta")
 
 # %% Visualizza tutto il database
 
@@ -142,3 +150,6 @@ gd.show_mappoints(viz, 'lat', 'lon',
                                       # hovertext = 'COMUNE'
                                       )
                         )
+
+for val in meta.loc[meta['COMUNE'] == 'DESIO', :]:
+    print(f"{val}: {meta.loc[meta['COMUNE'] == 'DESIO', val].values}")

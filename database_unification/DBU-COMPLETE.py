@@ -112,6 +112,9 @@ codes = metamerge.loc[metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_PTUA
 codes = pd.concat([codes, metamerge.loc[metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_SIF'].dropna()])
 headmerge, rprtmerge = dw.mergets(headDBU, head, codes, report = True, tag = 'PTUA2003')
 
+headcorr = da.correct_quota(meta, head, metamerge, codes, quotacols = ['z', 'QUOTA_MISU'])
+hmrgcorr = dw.mergets(headDBU, headcorr, codes)
+
 # %% DBU-2
 #CAP
 
@@ -181,11 +184,11 @@ metamerge = dw.joincolumns(metamerge, '_dbu', '_I2005')
 idx = (metamerge['CODICE_SIF'].isin(meta.index)) & (metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA')
 codes = metamerge.loc[idx, 'CODICE_SIF']
 
-#test diventerà poi headcorr
-test = da.correct_quota(meta, head, metamerge, codes, quotacols = ['z', 'QUOTA_MISU'], printval = True)
-
 headmerge, rprt = dw.mergets(headmerge, head, codes, report = True, tag = 'Idroscalo2005')
 rprtmerge = dw.merge_rprt(rprtmerge.set_index('CODICE'), rprt.set_index('CODICE'))
+
+headcorr = da.correct_quota(meta, head, metamerge, codes, quotacols = ['z', 'QUOTA_MISU'])
+hmrgcorr = dw.mergets(hmrgcorr, headcorr, codes)
 
 #add lake
 lake_mt = pd.read_csv('data/Idroscalo2005/meta_lake.csv')
@@ -233,6 +236,9 @@ codelst.set_index('CODICE_link', inplace = True)
 codelst = codelst.squeeze()
 headmerge, rprt = dw.mergets(headmerge, head, codelst, report = True, tag = 'OLONA')
 rprtmerge = dw.merge_rprt(rprtmerge, rprt.set_index('CODICE_link'))
+
+headcorr = da.correct_quota(meta, head, metamerge, codelst, quotacols = ['Q', 'QUOTA_MISU'])
+hmrgcorr = dw.mergets(hmrgcorr, headcorr, codelst)
 
 # %% DBU-5
 #Milano1950
@@ -305,6 +311,9 @@ codes.index = to_insert.loc[idx.values, 'CODICE']
 headmerge, rprt = dw.mergets(headmerge, head, codes, report = True, tag = 'Milano1950')
 rprtmerge = dw.merge_rprt(rprtmerge, rprt.set_index('CODICE'))
 
+headcorr = da.correct_quota(meta, head, metamerge, codes, quotacols = ['RIFERIMENTO', 'QUOTA_MISU'])
+hmrgcorr = dw.mergets(hmrgcorr, headcorr, codes)
+
 #%% DBU-6
 #SSGiovanni
 
@@ -350,6 +359,9 @@ codes.index = to_insert.loc[idx.values, 'CODICE']
 headmerge, rprt = dw.mergets(headmerge, head, codes, report = True, tag = 'SSGiovanni')
 rprtmerge = dw.merge_rprt(rprtmerge, rprt.set_index('CODICE'))
 
+headcorr = da.correct_quota(meta, head, metamerge, codes, quotacols = ['QUOTA', 'QUOTA_MISU'])
+hmrgcorr = dw.mergets(hmrgcorr, headcorr, codes)
+
 # %% Final operations
 
 # - Set CODICE as the index in report
@@ -389,6 +401,7 @@ dw.join_twocols(metamerge, ['NOTE', 'INFO'], rename = 'INFO', onlyna = False, ad
 # - Clean headmerge from series not present in metamerge
 test = np.invert(headmerge.columns.isin(metamerge.index))
 headmerge.drop(columns = headmerge.columns[test], inplace = True)
+hmrgcorr.drop(columns = hmrgcorr.columns[test], inplace = True)
 
 # - Search and replace added codes in metamerge with existing ones in codes_db
 # -- Add eventual SIF codes not present based on CODICE and CODICE_PP
@@ -415,6 +428,7 @@ for col in headmerge.columns:
     else:
         newcols += [col]
 headmerge.columns = newcols
+hmrgcorr.columns = newcols
 # -- Replace the codes in rprtmerge
 newseries = len([code for code in rprtmerge.index if code[0] != 'P'])
 idx = metamerge.loc[rprtmerge.index, 'CODICE_PP'].notna()
@@ -442,3 +456,5 @@ print(f"Incremento medio di dati: {round(abs(sum(delta)/len(delta))/365, 2)} ann
 metamerge.to_csv('data/results/db-unification/meta_DBU-COMPLETE.csv')
 headmerge.to_csv('data/results/db-unification/head_DBU-COMPLETE.csv')
 rprtmerge.to_csv('data/results/db-unification/report_merge_DBU-COMPLETE.csv')
+
+hmrgcorr.to_csv(('data/results/db-unification/headcorr_DBU-COMPLETE.csv'))

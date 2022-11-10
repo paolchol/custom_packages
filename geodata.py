@@ -132,7 +132,9 @@ def transf_CRS(x, y, frm, to, series = False, **kwargs):
     series : bool, optional
         If True, x and y are treated as pandas.Series and transformed into arrays.
         The default is False.
-
+    **kwargs : kwargs, optional
+        Additional arguments forwarded to pyproj.Transformer.transform().
+    
     Returns
     -------
     out : tuple
