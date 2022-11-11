@@ -258,9 +258,6 @@ def correct_quota(meta, ts, metacorr, codes, quotacols, printval = False):
                 print('meta: ' + str(meta.loc[codes[code], quotacols[0]]))
                 print('metacorr: ' + str(metacorr.loc[code, quotacols[1]]))
     return tscorr
-    
-    
-
 
 # %% General operations
 
@@ -270,7 +267,7 @@ def print_row(df, row, cond = True):
             print(f'{col}: {df.loc[row, col].values[0]}')
         else:
             # print(f'{np.where(df.columns == col)[0][0]}')
-            print(f'{col}: {df.iloc[row, np.where(df.columns == col)[0][0]]}')
+            print(f'{col}: {df.iloc[row, np.where(df.columns == col)[0][0]]}')    
             
 def ts_sel_date(df, meta = None, sttime = None, entime = None, delta = None):
     """

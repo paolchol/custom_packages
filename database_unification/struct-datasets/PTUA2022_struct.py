@@ -41,6 +41,7 @@ meta.to_csv('data/PTUA2022/meta_PTUA2022.csv', index = False)
 # %% Visualize the time series
 
 import dataviz as dv
+import datawrangling as dw
 
 # D = 5
 # s, e = 0, 0
@@ -50,6 +51,8 @@ import dataviz as dv
 #     print(s, e)
 #     s = e + 1
 
+head = head.loc[:, head.columns.isin(meta['CODICE'])]
+head.columns = dw.enum_instances(meta.set_index('CODICE').loc[head.columns, 'COMUNE'], ['MILANO', 'MONZA', 'CERNUSCO LOMBARDONE', 'SESTO SAN GIOVANNI'])
 dv.interactive_TS_visualization(head, 'date', 'total head', markers = True, file = 'plot/db/original_TS_IT03GWBISSAPTA.html',
                                 title = 'Database di partenza - Origine: PTUA2022')
 

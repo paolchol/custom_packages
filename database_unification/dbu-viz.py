@@ -39,11 +39,17 @@ ts.columns = dw.enum_instances(meta.loc[ts.columns, 'COMUNE'], ['MILANO', 'SESTO
 dv.interactive_TS_visualization(ts, xlab = 'Data', ylab = 'Livello piezometrico [m s.l.m.]',
                                 file = 'plot/dbu/added_enhanced_DBU-COMPLETE_COMUNE.html',
                                 markers = True, title = "Serie aggiunte o ampliate nell'aggregazione dei database - Non processate")
-#Visualizza il database corretto
+#Visualizza il database corretto - CODICE
+dv.interactive_TS_visualization(tscor, xlab = 'Data', ylab = 'Livello piezometrico [m s.l.m.]',
+                                file = 'plot/dbu/added_enhanced_DBU-COMPLETE_CODICE_headcorr.html',
+                                markers = True, title = "Serie aggiunte o ampliate nell'aggregazione dei database - Quota corretta prima dell'aggiunta")
+#Visualizza il database corretto - COMUNE
 tscor.columns = dw.enum_instances(meta.loc[tscor.columns, 'COMUNE'], ['MILANO', 'SESTO SAN GIOVANNI']) #dai valore univoco ai comuni
 dv.interactive_TS_visualization(tscor, xlab = 'Data', ylab = 'Livello piezometrico [m s.l.m.]',
                                 file = 'plot/dbu/added_enhanced_DBU-COMPLETE_COMUNE_headcorr.html',
                                 markers = True, title = "Serie aggiunte o ampliate nell'aggregazione dei database - Quota corretta prima dell'aggiunta")
+
+#tenere traccia dei numeri associati ai comuni multipli!
 
 # %% Visualizza tutto il database
 

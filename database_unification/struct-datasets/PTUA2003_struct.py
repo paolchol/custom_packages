@@ -75,9 +75,16 @@ for col in ts1.columns:
     if np.isnan(meta1.loc[col, 'z']):
          print(col, ' ', meta1.loc[col, 'COMUNE'], ' non ha quota assegnata')
     ts1[col] = meta1.loc[col, 'z'] - ts1[col]
-ts1[ts1 < 0] = 0 #sostituisce i livelli negativi con 0 (condizione "asciutto")
+ts1[ts1 < 0] = np.nan
+#sostituisce i livelli negativi (-9999) (condizione "asciutto") con np.nan
+#si può trovare un modo per mantenere l'informazione che il pozzo fosse asciutto, per
+#esempio
 
-# %% Operazioni sul secondo dataset
+# %% Sezioni rimosse
+
+#ts2 introduceva degli errori nei 
+
+# --- Operazioni sul secondo dataset ---
 
 #Prima pulizia del dataset
 df2 = laureg2.copy()
@@ -125,7 +132,7 @@ for i in range(len(ts2.columns)):
 meta2 = df2.iloc[:, [x for x in range(10)]].set_index('CODICE')
 #Il database contiente il livello piezometrico, non è necessario fare ulteriori operazioni
 
-# %% Join dei due dataset
+# --- Join dei due dataset ---
 
 #Join di meta1 e meta2
 meta = dw.joincolumns(pd.merge(meta1, meta2, how = 'outer', left_index = True, right_index = True))
@@ -136,8 +143,7 @@ meta = meta[colorder]
 idx = [x in ts1.columns for x in ts2.columns]
 tool = ts2.drop(ts2.columns[idx], axis = 1)
 ts = pd.merge(ts1, tool, how = 'outer', left_index=True, right_index=True)
-tool = ts2.loc[:, idx]
-ts = pd.merge(ts, tool, how = 'outer', left_index=True, right_index=True)
+
 ts = dw.joincolumns(ts, '_x', '_y')
 ts.index.rename('DATA', inplace = True)
 
@@ -150,10 +156,26 @@ ts.columns = [f'0{code}' if (len(code)>6) and (code[0] != 'P') else code for cod
 #Aggiunta colonna ORIGINE
 meta['ORIGINE'] = 'PTUA2003'
 
-# %% Salvataggio dei dataset ottenuti
-
 meta.to_csv('data/PTUA2003/meta_PTUA2003_TICINOADDA_unfiltered.csv')
 ts.to_csv('data/PTUA2003/head_PTUA2003_TICINOADDA_unfiltered.csv')
+
+# %% Op
+
+meta1 = dw.joincolumns(meta1.merge(meta2, how = 'left', left_index = True, right_index = True))
+
+# %% Salvataggio dei dataset ottenuti
+
+#Modifica dei codici SIF
+#I codici SIF hanno uno 0 davanti: va aggiunto
+meta1.index = [f'0{code}' if (len(code)>6) and (code[0] != 'P') else code for code in meta1.index]
+meta1.index.names = ['CODICE']
+ts1.columns = [f'0{code}' if (len(code)>6) and (code[0] != 'P') else code for code in ts1.columns]
+ts1.index.names = ['DATA']
+
+#Aggiunta colonna ORIGINE
+meta1['ORIGINE'] = 'PTUA2003'
+meta1.to_csv('data/PTUA2003/meta_PTUA2003_TICINOADDA_meta1.csv')
+ts1.to_csv('data/PTUA2003/head_PTUA2003_TICINOADDA_ts1.csv')
 
 # %% Operazioni sui dataset completi
 

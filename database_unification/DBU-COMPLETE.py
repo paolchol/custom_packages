@@ -47,69 +47,41 @@ def identify_couples_codes(codes_SIF_PP, metaDBU, meta, xcol, ycol):
     codelst.set_index('CODICE_SIF', inplace = True)
     return codelst
 
+# %% Load and clean the original dataset (PTUA2022)
+
+metaDBU = pd.read_csv('data/PTUA2022/meta_PTUA2022.csv', index_col = 'CODICE')
+# - Set QUOTA_MISU equal to QUOTA_PC_S if missing
+metaDBU.loc[metaDBU['QUOTA_MISU'] == 0, 'QUOTA_MISU'] = metaDBU.loc[metaDBU['QUOTA_MISU'] == 0, 'QUOTA_PC_S']
+#drop remaining points with no z field associated
+metaDBU.drop(index = metaDBU.loc[metaDBU['QUOTA_MISU'] == 0, :].index, inplace = True)
+
 # %% DBU-1
 #PTUA2003
 
-metaDBU = pd.read_csv('data/PTUA2022/meta_PTUA2022.csv', index_col = 'CODICE')
-meta = pd.read_csv('data/PTUA2003/meta_PTUA2003_TICINOADDA_filtered.csv', index_col = 'CODICE')
-idx = meta.index.isin(code_db['CODICE_SIF'])
-sifpp = code_db.loc[code_db['CODICE_SIF'].isin(meta.index), ['CODICE_SIF', 'CODICE_PP']]
-sifpp.set_index('CODICE_SIF', inplace = True)
+meta = pd.read_csv('data/PTUA2003/meta_PTUA2003_TICINOADDA_meta1.csv', index_col = 'CODICE')
 
-idx = meta.loc[:, ['x', 'y']].isna().apply(all, 1)
-tool2003 = meta.drop(meta.index[idx]).copy()
-tool2003 = tool2003.loc[tool2003['FALDA'].isin(['1', np.nan, 'SUPERF.', 'SUPERF. (acquifero locale)']), :]
-out = gd.transf_CRS(tool2003.loc[:, 'x'], tool2003.loc[:, 'y'], 'EPSG:3003', 'EPSG:4326', series = True)
-tool2003['lat'], tool2003['lon'] = out[0], out[1]
-out = gd.transf_CRS(metaDBU.loc[:, 'X_WGS84'], metaDBU.loc[:, 'Y_WGS84'], 'EPSG:32632', 'EPSG:4326', series = True)
-metaDBU['lat'], metaDBU['lon'] = out[0], out[1]
-db_nrst = gd.find_nearestpoint(tool2003, metaDBU,
-                     id1 = 'CODICE', coord1 = ['lon', 'lat'],
-                     id2 = 'CODICE', coord2 = ['lon', 'lat'],
-                     reset_index = True)
-db_nrst = db_nrst[db_nrst['dist'] < 100]
-codelst = pd.merge(sifpp, db_nrst.loc[:, ['CODICE', 'CODICE_nrst']], how = 'outer', left_index = True, right_on = 'CODICE')
-codelst.reset_index(inplace = True, drop = True)
-codelst.loc[np.invert(codelst['CODICE_nrst'].isna()), 'CODICE_PP'] = codelst.loc[np.invert(codelst['CODICE_nrst'].isna()), 'CODICE_nrst']
-codelst.drop(columns = 'CODICE_nrst', inplace = True)
-codelst.rename(columns = {'CODICE': 'CODICE_PTUA2003', 'CODICE_PP': 'CODICE_link'}, inplace = True)
-codelst.set_index('CODICE_PTUA2003', inplace = True)
+metaDBU['lat'], metaDBU['lon'] = gd.transf_CRS(metaDBU.loc[:, 'X_WGS84'], metaDBU.loc[:, 'Y_WGS84'], 'EPSG:32632', 'EPSG:4326', series = True)
 
-sum(codelst.isin(metaDBU.index).values)
+codelst = identify_couples_codes(code_db, metaDBU, meta, 'x', 'y')
+
 metamerge = dw.mergemeta(metaDBU, meta, link = codelst,
-                    firstmerge = dict(left_index = True, right_index = True),
-                    secondmerge = dict(left_index = True, right_on = 'CODICE_link',
-                                       suffixes = [None, "_PTUA2003"]))
-metamerge.rename(columns = {'CODICE_link': 'CODICE', 'index': 'CODICE_PTUA2003'}, inplace = True)
+                         firstmerge = dict(left_index = True, right_index = True),
+                         secondmerge = dict(left_index = True, right_on = 'CODICE_link',
+                                            suffixes = [None, "_PTUA2003"]))
+metamerge.rename(columns = {'CODICE_link': 'CODICE'}, inplace = True)
 metamerge.set_index('CODICE', inplace = True)
-metamerge.drop(columns = ['SETTORE', 'STRAT.', 'PROVINCIA_PTUA2003', 'x', 'y', 'COMUNE_PTUA2003'], inplace = True)
-metamerge.rename(columns = {'z': 'z_PTUA2003', 'INFO': 'INFO_PTUA2003'}, inplace = True)
-
-#Split SIF code from the other PTUA2003 codes
-codePTUA = []
-codeSIF = []
-for code in metamerge['CODICE_PTUA2003']:
-    if isinstance(code, str):
-        if (code[0:3] == '015') | (code[0:3] == '098'):
-            codeSIF += [code]
-            codePTUA += [np.nan]
-        else:
-            codeSIF += [np.nan]
-            codePTUA += [code]
-    else:
-        codePTUA += [np.nan]
-        codeSIF += [np.nan]
-metamerge['CODICE_PTUA2003'] = codePTUA
-metamerge.insert(0, column = 'CODICE_SIF', value = codeSIF)
+metamerge.drop(columns = ['SETTORE', 'STRAT.', 'PROVINCIA_PTUA2003', 'x', 'y', 'COMUNE_PTUA2003', 'lat_PTUA2003', 'lon_PTUA2003'], inplace = True)
+metamerge.rename(columns = {'z': 'z_PTUA2003', 'INFO': 'INFO_PTUA2003', 'index': 'CODICE_SIF'}, inplace = True)
 metamerge = dw.join_twocols(metamerge, cols = ['ORIGINE', 'ORIGINE_PTUA2003'], onlyna = False, add = True)
+metamerge = metamerge[~metamerge.index.duplicated(keep = 'first')]
 
 headDBU = pd.read_csv('data/PTUA2022/head_IT03GWBISSAPTA.csv', index_col='DATA')
-head = pd.read_csv('data/PTUA2003/head_PTUA2003_TICINOADDA_unfiltered.csv', index_col='DATA')
+head = pd.read_csv('data/PTUA2003/head_PTUA2003_TICINOADDA_ts1.csv', index_col='DATA')
 headDBU.index = pd.DatetimeIndex(headDBU.index)
 head.index = pd.DatetimeIndex(head.index)
 
-codes = metamerge.loc[metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_PTUA2003'].dropna()
-codes = pd.concat([codes, metamerge.loc[metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_SIF'].dropna()])
+codes = metamerge.loc[metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_SIF'].dropna()
+# codes = pd.concat([codes, metamerge.loc[metamerge['BACINO_WISE'] == 'IT03GWBISSAPTA', 'CODICE_SIF'].dropna()])
 headmerge, rprtmerge = dw.mergets(headDBU, head, codes, report = True, tag = 'PTUA2003')
 
 headcorr = da.correct_quota(meta, head, metamerge, codes, quotacols = ['z', 'QUOTA_MISU'])
@@ -274,6 +246,9 @@ codelst = codelst.squeeze()
 headmerge, rprt = dw.mergets(headmerge, head, codelst, report = True, tag = 'Milano1950')
 rprtmerge = dw.merge_rprt(rprtmerge, rprt.set_index('CODICE_link'))
 
+headcorr = da.correct_quota(meta, head, metamerge, codelst, quotacols = ['RIFERIMENTO', 'QUOTA_MISU'])
+hmrgcorr = dw.mergets(hmrgcorr, headcorr, codelst)
+
 notmrg = head.loc[:, np.invert(head.columns.isin(codelst))].copy()
 remove = ['SIF_NA']
 notmrg.drop(columns = remove, inplace = True)
@@ -386,13 +361,8 @@ metamerge = dw.join_twocols(metamerge, ['DATA_INIZIO_x', 'DATA_INIZIO_y'], renam
 
 # - Re-order the columns in a more intuitive way
 cols = metamerge.columns.to_list()
-nc = cols[0:7] + [cols[31]] + cols[7:9] + cols[22:24] + cols[9:22] + cols[24:31]
+nc = cols[0:6] + [cols[30]] + cols[6:8] + cols[21:23] + cols[8:21] + [cols[24]] + [cols[23]] + cols[25:30]
 metamerge = metamerge[nc]
-
-# - Set QUOTA_MISU equal to QUOTA_PC_S if missing
-metamerge.loc[metamerge['QUOTA_MISU'] == 0, 'QUOTA_MISU'] = metamerge.loc[metamerge['QUOTA_MISU'] == 0, 'QUOTA_PC_S']
-#drop remaining points with no z field associated
-metamerge.drop(index = metamerge.loc[metamerge['QUOTA_MISU'] == 0, :].index, inplace = True)
 
 # - Rename the coordinate columns and merge the info columns
 metamerge.rename(columns = {'X_WGS84': 'X', 'Y_WGS84': 'Y'}, inplace = True)
@@ -445,6 +415,11 @@ for x in metamerge['CODICE_SIF']:
         if str(x)[0] == 'P':
             metamerge.loc[metamerge['CODICE_SIF'] == x, 'CODICE_SIF'] = np.nan
 
+# - Clean 'RESCALDINA' time series
+idx = metamerge.loc[metamerge['COMUNE'] == 'RESCALDINA', :].index
+headmerge.loc[pd.to_datetime(['06-01-2002', '08-01-2002']), idx] = np.nan
+hmrgcorr.loc[pd.to_datetime(['06-01-2002', '08-01-2002']), idx] = np.nan
+
 # - Print information on the completed merge
 print(f"Numero totale di serie aggregate o aggiunte al database: {rprtmerge.shape[0]}")
 print(f"Numero di serie che hanno avuto un allungamento della serie storica: {len(delta)}")
@@ -458,3 +433,56 @@ headmerge.to_csv('data/results/db-unification/head_DBU-COMPLETE.csv')
 rprtmerge.to_csv('data/results/db-unification/report_merge_DBU-COMPLETE.csv')
 
 hmrgcorr.to_csv(('data/results/db-unification/headcorr_DBU-COMPLETE.csv'))
+
+# %% Trash
+
+#DBU-1
+# idx = meta.index.isin(code_db['CODICE_SIF'])
+# sifpp = code_db.loc[code_db['CODICE_SIF'].isin(meta.index), ['CODICE_SIF', 'CODICE_PP']]
+# sifpp.set_index('CODICE_SIF', inplace = True)
+# idx = meta.loc[:, ['x', 'y']].isna().apply(all, 1)
+# tool2003 = meta.drop(meta.index[idx]).copy()
+# tool2003 = tool2003.loc[tool2003['FALDA'].isin(['1', np.nan, 'SUPERF.', 'SUPERF. (acquifero locale)']), :]
+# out = gd.transf_CRS(tool2003.loc[:, 'x'], tool2003.loc[:, 'y'], 'EPSG:3003', 'EPSG:4326', series = True)
+# tool2003['lat'], tool2003['lon'] = out[0], out[1]
+
+# db_nrst = gd.find_nearestpoint(tool2003, metaDBU,
+#                      id1 = 'CODICE', coord1 = ['lon', 'lat'],
+#                      id2 = 'CODICE', coord2 = ['lon', 'lat'],
+#                      reset_index = True)
+# db_nrst = db_nrst[db_nrst['dist'] < 100]
+# codelst = pd.merge(sifpp, db_nrst.loc[:, ['CODICE', 'CODICE_nrst']], how = 'outer', left_index = True, right_on = 'CODICE')
+# codelst.reset_index(inplace = True, drop = True)
+# codelst.loc[np.invert(codelst['CODICE_nrst'].isna()), 'CODICE_PP'] = codelst.loc[np.invert(codelst['CODICE_nrst'].isna()), 'CODICE_nrst']
+# codelst.drop(columns = 'CODICE_nrst', inplace = True)
+# codelst.rename(columns = {'CODICE': 'CODICE_PTUA2003', 'CODICE_PP': 'CODICE_link'}, inplace = True)
+# codelst.set_index('CODICE_PTUA2003', inplace = True)
+
+# sum(codelst.isin(metaDBU.index).values)
+# metamerge = dw.mergemeta(metaDBU, meta, link = codelst,
+#                     firstmerge = dict(left_index = True, right_index = True),
+#                     secondmerge = dict(left_index = True, right_on = 'CODICE_link',
+#                                        suffixes = [None, "_PTUA2003"]))
+# metamerge.rename(columns = {'CODICE_link': 'CODICE', 'index': 'CODICE_PTUA2003'}, inplace = True)
+# metamerge.set_index('CODICE', inplace = True)
+# metamerge.drop(columns = ['SETTORE', 'STRAT.', 'PROVINCIA_PTUA 2003', 'x', 'y', 'COMUNE_PTUA2003'], inplace = True)
+# metamerge.rename(columns = {'z': 'z_PTUA2003', 'INFO': 'INFO_PTUA2003'}, inplace = True)
+
+#Split SIF code from the other PTUA2003 codes
+# codePTUA = []
+# codeSIF = []
+# for code in metamerge['CODICE_PTUA2003']:
+#     if isinstance(code, str):
+#         if (code[0:3] == '015') | (code[0:3] == '098'):
+#             codeSIF += [code]
+#             codePTUA += [np.nan]
+#         else:
+#             codeSIF += [np.nan]
+#             codePTUA += [code]
+#     else:
+#         codePTUA += [np.nan]
+#         codeSIF += [np.nan]
+# metamerge['CODICE_PTUA2003'] = codePTUA
+# metamerge.insert(0, column = 'CODICE_SIF', value = codeSIF)
+# metamerge = dw.join_twocols(metamerge, cols = ['ORIGINE', 'ORIGINE_PTUA2003'], onlyna = False, add = True)
+

@@ -217,7 +217,7 @@ def create_datecol(df, d = None, year = None, month = None):
     datecol = pd.to_datetime(datecol, format = '%Y-%m-%d')
     return datecol
 
-def enum_instances(lst, check, start = 1):
+def enum_instances(lst, check = None, start = 1):
     """
     Returns a list where all instances in 'lst' which are present in 'check'
     are enumerated with a progressive number
@@ -227,7 +227,7 @@ def enum_instances(lst, check, start = 1):
     lst : list, array or Index
         A list, array or Index with instances to be enumerated.
     check : list
-        A list containing one value.
+        A list containing one or more values.
     start : int, optional
         The starting number from which to count. The default is 1.
 
@@ -238,12 +238,20 @@ def enum_instances(lst, check, start = 1):
         are enumerated with a progressive number.
     """
     new = []
-    for lab in lst:
-        if lab in check:
-            new += [f'{lab}-{start}']
-            start = start + 1
-        else:
-            new += [lab]
+    st = (start, 'null')
+    
+    if check is None:
+        #trova i duplicati in lst e crea una lista di valori con duplicati
+        pass
+    
+    for c in check:
+        start = st[0]
+        for lab in lst:
+            if lab == c:
+                new += [f'{lab}-{start}']
+                start = start + 1
+            elif (lab not in new) & (lab not in check):
+                new += [lab]
     return new
 
 def datecol_arrange(datecol):
