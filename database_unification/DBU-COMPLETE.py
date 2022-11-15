@@ -420,6 +420,16 @@ idx = metamerge.loc[metamerge['COMUNE'] == 'RESCALDINA', :].index
 headmerge.loc[pd.to_datetime(['06-01-2002', '08-01-2002']), idx] = np.nan
 hmrgcorr.loc[pd.to_datetime(['06-01-2002', '08-01-2002']), idx] = np.nan
 
+# - Clean 'FOG4' time series (headcorr only)
+ogmeta = pd.read_csv('data/Milano1950/meta_Milano1950.csv', index_col = 'CODICE')
+oghead = pd.read_csv('data/Milano1950/head_Milano1950.csv', index_col = 'DATA')
+oghead.index = pd.DatetimeIndex(oghead.index)
+tool = oghead.loc[pd.date_range('2002-01-01', '2007-03-01', freq = 'MS'), ogmeta.loc[ogmeta['PIEZOMETRO'] == 'FOG4'].index]
+hmrgcorr = pd.merge(hmrgcorr, tool, how = 'outer', left_index = True, right_index = True)
+hmrgcorr = dw.join_twocols(hmrgcorr, [metamerge.loc[metamerge['CODICE_FOG'] == 'FOG4', :].index.values[0], tool.columns.values[0]], onlyna = False)
+hmrgcorr.loc[pd.to_datetime('2006-01-01'), metamerge.loc[metamerge['CODICE_FOG'] == 'FOG4', :].index.values[0]] = np.nan
+hmrgcorr.index.names = ['DATA']
+
 # - Print information on the completed merge
 print(f"Numero totale di serie aggregate o aggiunte al database: {rprtmerge.shape[0]}")
 print(f"Numero di serie che hanno avuto un allungamento della serie storica: {len(delta)}")

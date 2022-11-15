@@ -35,6 +35,7 @@ dv.interactive_TS_visualization(ts, xlab = 'Data', ylab = 'Livello piezometrico 
                                 file = 'plot/dbu/added_enhanced_DBU-COMPLETE.html',
                                 markers = True, title = "Serie aggiunte o ampliate nell'aggregazione dei database - Non processate")
 #Visualizza con il comune come etichetta
+ogts = ts.columns
 ts.columns = dw.enum_instances(meta.loc[ts.columns, 'COMUNE'], ['MILANO', 'SESTO SAN GIOVANNI']) #dai valore univoco ai comuni
 dv.interactive_TS_visualization(ts, xlab = 'Data', ylab = 'Livello piezometrico [m s.l.m.]',
                                 file = 'plot/dbu/added_enhanced_DBU-COMPLETE_COMUNE.html',
@@ -44,6 +45,7 @@ dv.interactive_TS_visualization(tscor, xlab = 'Data', ylab = 'Livello piezometri
                                 file = 'plot/dbu/added_enhanced_DBU-COMPLETE_CODICE_headcorr.html',
                                 markers = True, title = "Serie aggiunte o ampliate nell'aggregazione dei database - Quota corretta prima dell'aggiunta")
 #Visualizza il database corretto - COMUNE
+ogtscor = ts.columns
 tscor.columns = dw.enum_instances(meta.loc[tscor.columns, 'COMUNE'], ['MILANO', 'SESTO SAN GIOVANNI']) #dai valore univoco ai comuni
 dv.interactive_TS_visualization(tscor, xlab = 'Data', ylab = 'Livello piezometrico [m s.l.m.]',
                                 file = 'plot/dbu/added_enhanced_DBU-COMPLETE_COMUNE_headcorr.html',
