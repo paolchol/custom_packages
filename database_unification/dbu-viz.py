@@ -110,7 +110,7 @@ labels = ['Lunghezza apparente', 'Lunghezza reale']
 
 plt.hist(tool, bins = 'auto', histtype = 'barstacked',
          label = labels, color = ['tab:blue', 'tab:olive'])
-plt.xlabel('Quantità di dati nella serie storica [anni]')#, {'fontname': 'Arial'})
+plt.xlabel('Lunghezza della serie storica [anni]')#, {'fontname': 'Arial'})
 plt.ylabel('Numero di serie storiche')
 plt.title('Ripartizione delle serie storiche in base alla loro popolazione')
 plt.text(40, 22, f"Numero di serie storiche: {tool.shape[0]}")
