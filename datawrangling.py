@@ -450,60 +450,65 @@ class arrange_metats():
     #Methods
     #-------
     
-    def to_webgis(self, anfields, ancouples, pzfields, pzcouples, idcol,
+    def to_webgis(self, metafields, metacouples, tsfields, tscouples, idcol,
                   ids = None, stacklab = None):
         """
         Returns the database in a format which can be uploaded in a WebGIS
 
         Parameters
         ----------
-        anfields : TYPE
-            DESCRIPTION.
-        ancouples : TYPE
-            DESCRIPTION.
-        pzfields : TYPE
-            DESCRIPTION.
-        pzcouples : TYPE
-            DESCRIPTION.
-        idcol : TYPE
-            DESCRIPTION.
-        ids : TYPE, optional
-            DESCRIPTION. The default is None.
-        stacklab : TYPE, optional
-            DESCRIPTION. The default is None.
-
+        metafields : str or list of str
+             Labels for the final metadata DataFrame associated with the time series.
+        metacouples : dict
+            Dictionary containing the labels from the original metadata DataFrame
+            ('meta' in __init__) corresponding to the final metadata DataFrame.
+        tsfields : string or list of string
+            Same as 'metafields' but relative to the final time series DataFrame.
+        tscouples : dict
+            Same as 'metacouples' but linking 'ts' in __init__ and the final
+            time serie DataFrame.
+        idcol : str
+            Label of the column containing the unique id of the point in the
+            future dataframes.
+        ids : str or list of str, optional
+            Labels for progressive numerical index columns. The default is None.
+        stacklab : str or list of str, optional
+            Label to associate to the resulting stacked dataframe columns.
+            The default is None.
+        
         Returns
         -------
-        TYPE
-            DESCRIPTION.
-        TYPE
-            DESCRIPTION.
-
+        meta : pandas.DataFrame
+            Metadata dataframe acting as a registry for the time series in 'ts',
+            in a format which can then be uploaded in a desired WebGIS.
+        ts : pandas.DataFrame
+            Time series dataframe in in a format which can then be uploaded in
+            a desired WebGIS. Linked to 'meta' through the 'idcol' label.
         """
-        # an - Anagrafica (metadata)
-        an = pd.DataFrame(np.zeros((self.meta.shape[0],len(anfields))), columns = anfields)
-        an[:] = np.nan
-        for tag in ancouples:
-            an[tag] = self.meta[ancouples[tag]]
+        # meta - Registry (metadata)
+        meta = pd.DataFrame(np.zeros((self.meta.shape[0],len(metafields))), columns = metafields)
+        meta[:] = np.nan
+        for tag in metacouples:
+            meta[tag] = self.meta[metacouples[tag]]
         if ids is not None:
-            an[ids[0]] = [x for x in range(1, an.shape[0]+1)]
-        # dpz - Piezometric data
-        dpz = self.ts.stack().reset_index(drop = False)
+            meta[ids[0]] = [x for x in range(1, meta.shape[0]+1)]
+        # ts - Time series data
+        ts = self.ts.stack().reset_index(drop = False)
         if stacklab is not None:
-            dpz.columns = stacklab
+            ts.columns = stacklab
         dump = self.meta.loc[self.meta[self.id].isin(self.ts.columns), :].copy()
         dump.reset_index(drop = True, inplace = True)
-        tool = pd.DataFrame(np.zeros((dump.shape[0],len(pzfields))), columns = pzfields)
+        tool = pd.DataFrame(np.zeros((dump.shape[0],len(tsfields))), columns = tsfields)
         tool[:] = np.nan
-        for tag in pzcouples:
-            tool[tag] = dump[pzcouples[tag]]
+        for tag in tscouples:
+            tool[tag] = dump[tscouples[tag]]
         if ids is not None:
-            tool[ids[1]] = an.loc[an[idcol].isin(tool[idcol]), ids[0]].values        
-        dpz = joincolumns(pd.merge(dpz, tool, how = 'right', left_on = idcol, right_on = idcol))
+            tool[ids[1]] = meta.loc[meta[idcol].isin(tool[idcol]), ids[0]].values        
+        ts = joincolumns(pd.merge(ts, tool, how = 'right', left_on = idcol, right_on = idcol))
         if ids is not None:
-            dpz[ids[0]] = [x for x in range(1, dpz.shape[0]+1)]
-        dpz = dpz[pzfields]
-        return an, dpz
+            ts[ids[0]] = [x for x in range(1, ts.shape[0]+1)]
+        ts = ts[tsfields]
+        return meta, ts
     
     def to_stackeDF(self):
         #transform to a format passable to the class stackeDF
@@ -515,7 +520,6 @@ class DBU():
     """
     Work in progress
     """
-    
     def __init__(self, meta_index = None, ts_index = None):
         self.meta_index = meta_index if meta_index is not None else ['CODICE', 'CODICE']
         self.ts_index = ts_index if ts_index is not None else ['DATA', 'DATA']
