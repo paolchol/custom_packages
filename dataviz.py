@@ -31,7 +31,8 @@ def fast_TS_visualization(df):
     plt.show()
 
 def interactive_TS_visualization(df, xlab = 'X', ylab = 'Y', file = 'temp.html',
-                                 plottype = 'line', markers = False, **kwargs):
+                                 plottype = 'line', legend_title = "Variables",
+                                 markers = False, ret = False, **kwargs):
     if plottype == 'line':
         figure = px.line(df, markers = markers)
     else:
@@ -39,10 +40,13 @@ def interactive_TS_visualization(df, xlab = 'X', ylab = 'Y', file = 'temp.html',
     figure.update_layout(
         xaxis_title = xlab,
         yaxis_title = ylab,
-        legend_title = "Variables",
+        legend_title = legend_title,
         **kwargs
         )
-    plot(figure, filename = file)
+    if ret:
+        return figure
+    else:
+        plot(figure, filename = file)
 
 # %% Plot SGI
 
