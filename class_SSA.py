@@ -2,7 +2,7 @@
 """
 Class to perform the SSA Time series decomposition
 Taken from:
-    D’Arcy, J. (2018). Introducing SSA for Time Series Decomposition |
+    D'Arcy, J. (2018). Introducing SSA for Time Series Decomposition |
     Kaggle. https://www.kaggle.com/jdarcy/introducing-ssa-for-time-series-decomposition
 
 @author: colompa
