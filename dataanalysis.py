@@ -23,6 +23,7 @@ class CheckOutliers():
     def __init__(self, df, printinfo = True):
         self.df = df
         self.output = pd.DataFrame(np.zeros((len(df.columns), 3)), columns = ['ID', 'n_outlier', 'perc_outlier'])
+        self.outliers = pd.DataFrame()
         for i, column in enumerate(df.columns):
             Q1 = np.nanpercentile(df[column], 25)
             Q3 = np.nanpercentile(df[column], 75)
@@ -61,6 +62,16 @@ class CheckOutliers():
         if not inplace: return output
         #add a method to return the "positions" of the outliers,
         #the index basically, and their values
+    
+    def plot_perc(self, tag = 'perc_outlier', **kwargs):
+        plt.bar(self.output['ID'], self.output[tag], **kwargs)
+        #to be improved. example: subplots
+        #reduce the size of the x labels
+    
+    def plot_series(self, upperonly = False, loweronly = False):
+        #plot time series with outliers highlighted
+        #plot boxplot
+        pass
 
 # %% Missing data detection
 

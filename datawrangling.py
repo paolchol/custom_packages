@@ -345,7 +345,7 @@ class stackedDF():
     #-------
     
     def rearrange(self, index_label = None, store = False, setdate = False,
-                  resample = True, rule = '1MS', *, dateargs = dict(), pivotargs = dict()):
+                  resample = True, rule = '1MS', *, dateargs = None, pivotargs = None):
         """
         Rearranges the stackedDF to obtain a simpler date/code dataframe
 
@@ -519,9 +519,33 @@ class arrange_metats():
             return an, dpz
         return an
     
-    def to_stackeDF(self):
-        #transform to a format passable to the class stackeDF
-        pass
+    def to_stackedDF(self, tsnames = None, selcol = None, **kwargs):
+        """
+        Generates a stacked dataframe combining ts and meta
+        provided
+
+        Parameters
+        ----------
+        tsnames : list, optional
+            A list to rename the columns of the dataframe resulting from
+            stacking the time series dataframe. The default is None.
+        selcol : list, optional
+            A list containing a selection of the columns from meta to merge
+            to the stacked time series. The default is None.
+        **kwargs : optional
+            Additional arguments for the pandas.DataFrame.merge() function.
+
+        Returns
+        -------
+        stacked : pandas.DataFrame
+            A dataframe with time series stacked in the rows. It's compatible
+            with the function "stackedDF", selecting 'daterows'.
+        """
+        stacked = self.ts.stack()
+        if tsnames is not None: stacked.columns = tsnames
+        cols = selcol if selcol is not None else self.meta.columns.to_list()
+        stacked = stacked.merge(self.meta[cols], **kwargs)
+        return stacked
 
 # %% Work in progress
 
@@ -529,7 +553,6 @@ class DBU():
     """
     Work in progress
     """
-    
     def __init__(self, meta_index = None, ts_index = None):
         self.meta_index = meta_index if meta_index is not None else ['CODICE', 'CODICE']
         self.ts_index = ts_index if ts_index is not None else ['DATA', 'DATA']
