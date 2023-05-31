@@ -38,13 +38,17 @@ class CheckOutliers():
             self.output.loc[i, 'n_outlier'] = sum(df[column] > upper_limit) + sum(df[column] < lower_limit)
             self.output.loc[i, 'perc_outlier'] = ((sum(df[column] > upper_limit) + sum(df[column] < lower_limit))/len(df[column]))*100
     
-    def plot(self, tag = 'perc_outlier'):
-        plt.plot(self.output['ID'], self.output[tag])
+    def plot(self, tag = 'perc_outlier', **kwargs):
+        plt.bar(self.output['ID'], self.output[tag], **kwargs)
         #to be improved. example: subplots
         #reduce the size of the x labels
     
-    def remove(self, fill = np.nan, skip = []):
-        output = self.df.copy()
+    def remove(self, fill = np.nan, skip = [], inplace = False,
+               upperonly = False, loweronly = False):
+        if inplace:
+            output = self.df
+        else:
+            output = self.df.copy()
         for column in self.df.columns:
             if column not in skip:
                 Q1 = np.nanpercentile(self.df[column], 25)
@@ -52,9 +56,9 @@ class CheckOutliers():
                 IQR = Q3 - Q1
                 upper_limit = Q3 + 1.5*IQR
                 lower_limit = Q1 - 1.5*IQR
-                output.loc[self.df[column] > upper_limit, column] = fill
-                output.loc[self.df[column] < lower_limit, column] = fill
-        return output
+                if not upperonly: output.loc[self.df[column] < lower_limit, column] = fill
+                if not loweronly: output.loc[self.df[column] > upper_limit, column] = fill
+        if not inplace: return output
         #add a method to return the "positions" of the outliers,
         #the index basically, and their values
 

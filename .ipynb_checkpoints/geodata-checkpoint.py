@@ -163,7 +163,7 @@ def find_nearestpoint(df1, df2, id1 = 'CODE', coord1 = ['lon', 'lat'],
                        **kwargs):
     """
     Obtains the nearest point from df2 relative to each point in df1. Returns
-    a dataframe gathering this information
+    a dataframe gatheirng this information
 
     Parameters
     ----------
@@ -224,14 +224,4 @@ def find_nearestpoint(df1, df2, id1 = 'CODE', coord1 = ['lon', 'lat'],
         for col in nrstcol:
             dbout.loc[dbout[id1] == p[1][id1], col] = df2.iloc[idx, :][next(lst)]
         dbout.loc[dbout[id1] == p[1][id1], 'dist'] = dist[idx]
-    
-    # opzione per rimuovere duplicati:
-    # questioni da risolvere:
-    #   - cercare secondo punto più vicino senza che il primo venga ancora selezionato
-    #   - rendere selezione iterativa, ripulendo il database a ogni iterazione finché non ci sono più duplicati
-    # if sum(dbout[f'{id2}_nrst'].duplicated()) > 0:
-    #     out = dbout.loc[dbout[f'{id2}_nrst'].duplicated(), ['CODICE', 'dist']]
-    #     drop = out.loc[out['dist'] != min(out['dist']), 'CODICE']
-    #     dbout.drop(dbout.loc[dbout['CODICE'].isin(drop),:].index, inplace = True)
-    
     return dbout

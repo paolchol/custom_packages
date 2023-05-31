@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Functions for data wrangling.
-As data wrangling I mean:
+Some functionalities:
     - operations on the datasets such as merge and concat
     - rows or columns removals
 
@@ -44,9 +44,9 @@ def joincolumns(df, keep = '_x', fillwith = '_y', col_order = None):
         else:
             newcol = col.split('_')[0]
         pos = df.loc[:, col].isna()
-        df.loc[pos, col] = df.loc[pos, f'{newcol}{fillwith}']
-        df.drop(columns = f'{newcol}{fillwith}', inplace = True)
-        df.rename(columns = {f'{col}': f'{newcol}'}, inplace = True)
+        df.loc[pos, col] = df.loc[pos, f"{newcol}{fillwith}"]
+        df.drop(columns = f"{newcol}{fillwith}", inplace = True)
+        df.rename(columns = {f"{col}": f"{newcol}"}, inplace = True)
     if col_order is not None: df = df[col_order]
     return df
 
@@ -242,8 +242,15 @@ def enum_instances(lst, check = None, start = 1):
     
     if check is None:
         #trova i duplicati in lst e crea una lista di valori con duplicati
-        pass
-    
+        
+        newlist = [] # empty list to hold unique elements from the list
+        check = [] # empty list to hold the duplicate elements from the list
+        for i in lst:
+            if i not in newlist:
+                newlist.append(i)
+            else:
+                check.append(i)
+    check = list(dict.fromkeys(check))
     for c in check:
         start = st[0]
         for lab in lst:
@@ -338,7 +345,7 @@ class stackedDF():
     #-------
     
     def rearrange(self, index_label = None, store = False, setdate = False,
-                  rule = '1MS',*, dateargs: dict, pivotargs: dict):
+                  resample = True, rule = '1MS', *, dateargs = dict(), pivotargs = dict()):
         """
         Rearranges the stackedDF to obtain a simpler date/code dataframe
 
@@ -360,7 +367,7 @@ class stackedDF():
             Optional arguments to provide to pandas.to_datetime. Example: to 
             specify a specific date format. Only useful for dftype "daterows".
         **pivotargs : dict, optional
-            Arguments to pass to pandas.DataFrame.pivot(). Needed for dftype 
+            Arguments to pass to pandas.DataFrame.pivot_table(). Needed for dftype 
             "daterows".
         
         Returns
@@ -368,7 +375,6 @@ class stackedDF():
         tool : pandas.DataFrame
             Re-arranged DataFrame with date as index and codes as columns.
         """
-        # df = self.df if inplace else self.df.copy()
         if self.dt == 'monthscols':
             idx = pd.date_range(f"{min(self.df[self.y])}-01-01", f"{max(self.df[self.y])}-12-01", freq = 'MS')
             tool = pd.DataFrame(np.zeros(len(idx)), index = idx)
@@ -392,9 +398,8 @@ class stackedDF():
             if setdate: self.df[self.dc] = pd.to_datetime(self.df[self.dc], **dateargs)
             tool = self.df.reset_index(self.df.index.names).copy()
             tool.set_index(self.dc, inplace = True)
-            # tool = tool.pivot(**pivotargs)
             tool = tool.pivot_table(index = self.dc, **pivotargs)
-            tool = tool.resample(rule).mean()
+            if resample: tool = tool.resample(rule).mean()
         else:
             print("Invalid 'dftype' provided when creating the object")
             return
@@ -450,16 +455,16 @@ class arrange_metats():
     #Methods
     #-------
     
-    def to_webgis(self, metafields, metacouples, tsfields, tscouples, idcol,
-                  ids = None, stacklab = None):
+    def to_webgis(self, anfields, ancouples, pzfields = None, pzcouples = None, idcol = None,
+                  ids = None, stacklab = None, onlymeta = False):
         """
         Returns the database in a format which can be uploaded in a WebGIS
 
         Parameters
         ----------
-        metafields : str or list of str
+        anfields : str or list of str
              Labels for the final metadata DataFrame associated with the time series.
-        metacouples : dict
+        ancouples : dict
             Dictionary containing the labels from the original metadata DataFrame
             ('meta' in __init__) corresponding to the final metadata DataFrame.
         tsfields : string or list of string
@@ -475,6 +480,8 @@ class arrange_metats():
         stacklab : str or list of str, optional
             Label to associate to the resulting stacked dataframe columns.
             The default is None.
+        onlymeta : bool
+            If you only want to consider anfields and ancouples. The default is False
         
         Returns
         -------
@@ -485,30 +492,32 @@ class arrange_metats():
             Time series dataframe in in a format which can then be uploaded in
             a desired WebGIS. Linked to 'meta' through the 'idcol' label.
         """
-        # meta - Registry (metadata)
-        meta = pd.DataFrame(np.zeros((self.meta.shape[0],len(metafields))), columns = metafields)
-        meta[:] = np.nan
-        for tag in metacouples:
-            meta[tag] = self.meta[metacouples[tag]]
+        # an - Anagrafica (metadata)
+        an = pd.DataFrame(np.zeros((self.meta.shape[0],len(anfields))), columns = anfields)
+        an[:] = np.nan
+        for tag in ancouples:
+            an[tag] = self.meta[ancouples[tag]]
         if ids is not None:
-            meta[ids[0]] = [x for x in range(1, meta.shape[0]+1)]
-        # ts - Time series data
-        ts = self.ts.stack().reset_index(drop = False)
-        if stacklab is not None:
-            ts.columns = stacklab
-        dump = self.meta.loc[self.meta[self.id].isin(self.ts.columns), :].copy()
-        dump.reset_index(drop = True, inplace = True)
-        tool = pd.DataFrame(np.zeros((dump.shape[0],len(tsfields))), columns = tsfields)
-        tool[:] = np.nan
-        for tag in tscouples:
-            tool[tag] = dump[tscouples[tag]]
-        if ids is not None:
-            tool[ids[1]] = meta.loc[meta[idcol].isin(tool[idcol]), ids[0]].values        
-        ts = joincolumns(pd.merge(ts, tool, how = 'right', left_on = idcol, right_on = idcol))
-        if ids is not None:
-            ts[ids[0]] = [x for x in range(1, ts.shape[0]+1)]
-        ts = ts[tsfields]
-        return meta, ts
+            an[ids[0]] = [x for x in range(1, an.shape[0]+1)]
+        # dpz - Piezometric data
+        if not onlymeta:
+            dpz = self.ts.stack().reset_index(drop = False)
+            if stacklab is not None:
+                dpz.columns = stacklab
+            dump = self.meta.loc[self.meta[self.id].isin(self.ts.columns), :].copy()
+            dump.reset_index(drop = True, inplace = True)
+            tool = pd.DataFrame(np.zeros((dump.shape[0],len(pzfields))), columns = pzfields)
+            tool[:] = np.nan
+            for tag in pzcouples:
+                tool[tag] = dump[pzcouples[tag]]
+            if ids is not None:
+                tool[ids[1]] = an.loc[an[idcol].isin(tool[idcol]), ids[0]].values        
+            dpz = joincolumns(pd.merge(dpz, tool, how = 'right', left_on = idcol, right_on = idcol))
+            if ids is not None:
+                dpz[ids[0]] = [x for x in range(1, dpz.shape[0]+1)]
+            dpz = dpz[pzfields]
+            return an, dpz
+        return an
     
     def to_stackeDF(self):
         #transform to a format passable to the class stackeDF
@@ -520,6 +529,7 @@ class DBU():
     """
     Work in progress
     """
+    
     def __init__(self, meta_index = None, ts_index = None):
         self.meta_index = meta_index if meta_index is not None else ['CODICE', 'CODICE']
         self.ts_index = ts_index if ts_index is not None else ['DATA', 'DATA']
