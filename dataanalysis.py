@@ -40,6 +40,8 @@ class CheckOutliers():
                 print(f'Percentage of outliers: {((sum(df[column] > upper_limit) + sum(df[column] < lower_limit))/len(df[column]))*100}')
             self.output.loc[i, 'ID'] = column
             self.output.loc[i, 'n_outlier'] = sum(df[column] > upper_limit) + sum(df[column] < lower_limit)
+            self.output.loc[i, 'n_outlier_up'] = sum(df[column] > upper_limit)
+            self.output.loc[i, 'n_outlier_lw'] = sum(df[column] < lower_limit)
             self.output.loc[i, 'perc_outlier'] = ((sum(df[column] > upper_limit) + sum(df[column] < lower_limit))/len(df[column]))*100
     
     def plot(self, tag = 'perc_outlier', **kwargs):
