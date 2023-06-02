@@ -20,8 +20,11 @@ import scipy.stats as st
 
 class CheckOutliers():
     
-    def __init__(self, df, printinfo = True):
-        self.df = df
+    def __init__(self, df, printinfo = True, inplace = False):
+        if inplace:
+            self.df = df
+        else:
+            self.df = df.copy()
         self.output = pd.DataFrame(np.zeros((len(df.columns), 3)), columns = ['ID', 'n_outlier', 'perc_outlier'])
         self.outliers = pd.DataFrame()
         for i, column in enumerate(df.columns):
@@ -44,9 +47,9 @@ class CheckOutliers():
         #to be improved. example: subplots
         #reduce the size of the x labels
     
-    def remove(self, fill = np.nan, skip = [], inplace = False,
-               upperonly = False, loweronly = False):
-        if inplace:
+    def remove(self, fill = np.nan, skip = [], upperonly = False, loweronly = False, keepchanges = False,
+                ret = False):
+        if keepchanges:
             output = self.df
         else:
             output = self.df.copy()
@@ -59,7 +62,7 @@ class CheckOutliers():
                 lower_limit = Q1 - 1.5*IQR
                 if not upperonly: output.loc[self.df[column] < lower_limit, column] = fill
                 if not loweronly: output.loc[self.df[column] > upper_limit, column] = fill
-        if not inplace: return output
+        if ret: return output
         #add a method to return the "positions" of the outliers,
         #the index basically, and their values
     
