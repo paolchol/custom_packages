@@ -20,37 +20,85 @@ import scipy.stats as st
 
 class CheckOutliers():
     
-    def __init__(self, df, printinfo = True, inplace = False):
+    def __init__(self, df, printinfo = True, inplace = False, saveoutliers = False):
+        """
+        df: pandas.DataFrame
+            DataFrame containing time series as columns
+        printinfo: bool, optional
+            If True, prints the count of outliers for each column. Default is True
+        inplace: bool, optional
+            If False, a copy of df is created to avoid making changes in the original df. Default is False 
+        saveoutliers: bool, optional
+            If True, a list containing the indexes of the outliers is created and saved.
+        """
         if inplace:
             self.df = df
         else:
             self.df = df.copy()
-        self.output = pd.DataFrame(np.zeros((len(df.columns), 3)), columns = ['ID', 'n_outlier', 'perc_outlier'])
-        self.outliers = pd.DataFrame()
+        self.count(printinfo, saveoutliers)
+        self.df_plot = self.df.copy()
+    
+    def count(self, printinfo, saveoutliers):
+        df = self.df
+        # if saveoutliers:
+        # return the "positions" of the outliers,
+        # the index basically, and their values
+        # self.outliers = pd.DataFrame()
+        # self.outliers_list
+        self.output = pd.DataFrame()
         for i, column in enumerate(df.columns):
-            Q1 = np.nanpercentile(df[column], 25)
-            Q3 = np.nanpercentile(df[column], 75)
-            IQR = Q3 - Q1
-            upper_limit = Q3 + 1.5*IQR
-            lower_limit = Q1 - 1.5*IQR
+            if not df[column].isnull().all():
+                Q1 = np.nanpercentile(df[column], 25)
+                Q3 = np.nanpercentile(df[column], 75)
+                IQR = Q3 - Q1
+                upper_limit = Q3 + 1.5*IQR
+                lower_limit = Q1 - 1.5*IQR
+
+                self.output = pd.concat([self.output,
+                                        pd.DataFrame([column,
+                                        sum(df[column] > upper_limit) + sum(df[column] < lower_limit),
+                                        sum(df[column] > upper_limit),
+                                        sum(df[column] < lower_limit),
+                                        ((sum(df[column] > upper_limit) + sum(df[column] < lower_limit))/len(df[column]))*100]).transpose()])
+            else:
+                self.output = pd.concat([self.output, pd.DataFrame([column, np.nan, np.nan, np.nan, np.nan]).transpose()])
             if printinfo:
                 print(f'Column: {column}')
                 print(f'Number of upper outliers: {sum(df[column] > upper_limit)}')
                 print(f'Number of lower outliers: {sum(df[column] < lower_limit)}')
                 print(f'Percentage of outliers: {((sum(df[column] > upper_limit) + sum(df[column] < lower_limit))/len(df[column]))*100}')
-            self.output.loc[i, 'ID'] = column
-            self.output.loc[i, 'n_outlier'] = sum(df[column] > upper_limit) + sum(df[column] < lower_limit)
-            self.output.loc[i, 'n_outlier_up'] = sum(df[column] > upper_limit)
-            self.output.loc[i, 'n_outlier_lw'] = sum(df[column] < lower_limit)
-            self.output.loc[i, 'perc_outlier'] = ((sum(df[column] > upper_limit) + sum(df[column] < lower_limit))/len(df[column]))*100
-    
-    def plot(self, tag = 'perc_outlier', **kwargs):
-        plt.bar(self.output['ID'], self.output[tag], **kwargs)
-        #to be improved. example: subplots
-        #reduce the size of the x labels
+            # if save_outliers:
+                # salva l'index come una lista
+                # crea un dictionary di liste
+                # outliers_list = {'code': column,
+                # 'lower_outliers': df.loc[df[column] < lower_limit, column].index}
+                # 'upper_outliers': df.loc[df[column] > upper_limit, column].index}
+                # pass
+        self.output.columns = ['ID', 'n_outlier', 'n_outlier_up', 'n_outlier_lw', 'perc_outlier']
+        self.output.reset_index(inplace=True, drop=True)
     
     def remove(self, fill = np.nan, skip = [], upperonly = False, loweronly = False, keepchanges = False,
                 ret = False):
+        """
+        Remove the outliers present in the df provided
+
+        fill: optional
+            The value with which to fill in inplace of the outliers. Default is numpy.nan
+        skip: str, list of str
+            Labels of columns to skip in the outlier removal
+        upperonly: bool, optional
+            If True, remove only the upper outliers, i.e. values above the upper threshold (Q75 + 1.5*IQR).
+            Default is False.
+        loweronly: bool, optional
+            If True, remove only the lower outliers, i.e. values above the lower threshold (Q25 - 1.5*IQR).
+            Default is False.
+        keepchanges: bool, optional
+            If True, CheckOutliers.df will be modified, thus "keeping the changes" made by this module.
+            Otherwise, it will not be changed. Default is False.
+        ret: bool, optional
+            If True, it will return CheckOutliers.df with the outliers removed by this module.
+            Default is False
+        """
         if keepchanges:
             output = self.df
         else:
@@ -64,9 +112,17 @@ class CheckOutliers():
                 lower_limit = Q1 - 1.5*IQR
                 if not upperonly: output.loc[self.df[column] < lower_limit, column] = fill
                 if not loweronly: output.loc[self.df[column] > upper_limit, column] = fill
-        if ret: return output
-        #add a method to return the "positions" of the outliers,
-        #the index basically, and their values
+        if ret:
+            return output
+
+    def plot_outliers(self):
+        # self.df_plot
+        pass
+
+    def plot(self, tag = 'perc_outlier', **kwargs):
+        plt.bar(self.output['ID'], self.output[tag], **kwargs)
+        #to be improved. example: subplots
+        #reduce the size of the x labels
     
     def plot_perc(self, tag = 'perc_outlier', **kwargs):
         plt.bar(self.output['ID'], self.output[tag], **kwargs)
