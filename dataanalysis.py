@@ -19,7 +19,31 @@ import scipy.stats as st
 # %% Outlier detection and rejection
 
 class CheckOutliers():
-    
+    """
+    Class to perform outliers imputation and removal
+
+    Attributes
+    ------------------------------
+    df: pandas.DataFrame
+        DataFrame containing time series as columns
+    output: pandas.DataFrame
+        Dataframe summarizing number and percentage of outliers for each column
+    outliers: dict
+        Dictionary containing the indexes of outliers for each df column
+
+    Methods
+    -------
+    count(self, printinfo, saveoutliers):
+        Counts the number of outliers
+    remove(self, fill = np.nan, skip = [], upperonly = False,
+            loweronly = False, keepchanges = False, ret = False):
+        Removes the identified outliers, providing options to decide which ones
+    plot_outliers(self, column, ret = False):
+        Plots df's column values along with its identified outliers
+    plot_bar():
+
+    """
+
     def __init__(self, df, printinfo = True, inplace = False, saveoutliers = False):
         """
         df: pandas.DataFrame
@@ -28,7 +52,7 @@ class CheckOutliers():
             If True, prints the count of outliers for each column. Default is True
         inplace: bool, optional
             If False, a copy of df is created to avoid making changes in the original df. Default is False 
-        saveoutliers: bool, optional
+        saveoutliers: bool, optional.
             If True, a list containing the indexes of the outliers is created and saved.
         """
         if inplace:
@@ -39,14 +63,32 @@ class CheckOutliers():
         self.df_plot = self.df.copy()
     
     def count(self, printinfo, saveoutliers):
+        """
+        Counts the number of outliers
+
+        Creates a pandas.DataFrame containing it.
+        The outliers are identified through 1.5*IQR (Inter-Quantile Range).
+
+        printinfo: bool
+            If True, prints the count of outliers and their percentage in the time series.
+            __init__ sets this to True as default.
+        saveoutliers: bool
+            If True, will save the position of outliers in the df.
+            __init__ will set this to False as default.
+        
+        Generates:
+        self.output: pandas.DataFrame
+            Dataframe summarizing number and percentage of outliers for each column.
+        self.outliers:
+            Dictionary with columns labels as keys containing the indexes of the
+            identified outliers.
+            If saveoutliers is True.
+        """
         df = self.df
-        # if saveoutliers:
-        # return the "positions" of the outliers,
-        # the index basically, and their values
-        # self.outliers = pd.DataFrame()
-        # self.outliers_list
+        if saveoutliers:
+            self.outliers = {}
         self.output = pd.DataFrame()
-        for i, column in enumerate(df.columns):
+        for column in df.columns:
             if not df[column].isnull().all():
                 Q1 = np.nanpercentile(df[column], 25)
                 Q3 = np.nanpercentile(df[column], 75)
@@ -67,18 +109,15 @@ class CheckOutliers():
                 print(f'Number of upper outliers: {sum(df[column] > upper_limit)}')
                 print(f'Number of lower outliers: {sum(df[column] < lower_limit)}')
                 print(f'Percentage of outliers: {((sum(df[column] > upper_limit) + sum(df[column] < lower_limit))/len(df[column]))*100}')
-            # if save_outliers:
-                # salva l'index come una lista
-                # crea un dictionary di liste
-                # outliers_list = {'code': column,
-                # 'lower_outliers': df.loc[df[column] < lower_limit, column].index}
-                # 'upper_outliers': df.loc[df[column] > upper_limit, column].index}
-                # pass
+            if saveoutliers:
+                if sum(df[column] > upper_limit) > 0 or sum(df[column] < lower_limit) > 0:
+                    self.outliers[column] = df.loc[df[column] > upper_limit, :].index.to_list() +\
+                                            df.loc[df[column] < lower_limit, :].index.to_list()
         self.output.columns = ['ID', 'n_outlier', 'n_outlier_up', 'n_outlier_lw', 'perc_outlier']
         self.output.reset_index(inplace=True, drop=True)
     
-    def remove(self, fill = np.nan, skip = [], upperonly = False, loweronly = False, keepchanges = False,
-                ret = False):
+    def remove(self, fill = np.nan, skip = [], upperonly = False, loweronly = False,
+               keepchanges = False, ret = False):
         """
         Remove the outliers present in the df provided
 
@@ -97,7 +136,12 @@ class CheckOutliers():
             Otherwise, it will not be changed. Default is False.
         ret: bool, optional
             If True, it will return CheckOutliers.df with the outliers removed by this module.
-            Default is False
+            Default is False.
+        
+        Returns:
+        output: pandas.DataFrame
+            The original df in input to the class with removed outliers.
+            Returns only if ret is True.
         """
         if keepchanges:
             output = self.df
@@ -114,23 +158,48 @@ class CheckOutliers():
                 if not loweronly: output.loc[self.df[column] > upper_limit, column] = fill
         if ret:
             return output
-
-    def plot_outliers(self):
-        # self.df_plot
-        pass
-
-    def plot(self, tag = 'perc_outlier', **kwargs):
-        plt.bar(self.output['ID'], self.output[tag], **kwargs)
-        #to be improved. example: subplots
-        #reduce the size of the x labels
+        elif not keepchanges:
+            self.removed = output
     
-    def plot_perc(self, tag = 'perc_outlier', **kwargs):
-        plt.bar(self.output['ID'], self.output[tag], **kwargs)
-        #to be improved. example: subplots
-        #reduce the size of the x labels
+    def plot_outliers(self, column, ret = False):
+        """
+        Plots df's column values along with its identified outliers
+
+        column: str
+            The label of the df's column to plot
+        ret: bool, optional
+            If True, returns fig, ax for further customization
+        """
+        if column in [*self.outliers]:
+            fig, ax = plt.subplots()
+            ax.plot(self.df_plot.loc[:, column], marker = '.', color = '#3782BD',
+                    label = column, linestyle = '-', alpha = 0.5)
+            ax.plot(self.df_plot.loc[self.outliers[column], column], marker = 'o',
+                    color = '#CB8EC8', label = 'Identified outliers', linestyle = '', alpha = 0.5,
+                    markersize = 10)
+            ax.legend(fancybox = False, frameon = False)
+            if ret:
+                return fig, ax
+        else:
+            print("This column has no outliers, use another function to plot its values")
+
+    def plot_bar(self, label = 'perc_outlier', **kwargs):
+        """
+        Plot the percentage of outliers in each column
+
+        label: str, optional
+            Column label of the self.output df to be plotted 
+        kwargs: optional
+            Additional parameters for matplotlib.axes.bar
+        """
+        _, ax = plt.subplots(figsize=(self.df.shape[1]//5, 5))
+        ax.bar(self.output['ID'], self.output[label], width = 1, **kwargs)
+        ax.set_xlabel('Outlier percentage [%]')
+        plt.xticks(rotation=90)
+        plt.tight_layout()
     
-    def plot_series(self, upperonly = False, loweronly = False):
-        #plot time series with outliers highlighted
+    def plot_boxplot(self, column, upperonly = False, loweronly = False):
+        #plot series boxplot with outliers highlighted
         #plot boxplot
         pass
 
@@ -195,7 +264,7 @@ def mann_kendall(vals, confidence = 0.95):
                     box[r,c] = 0
     
     freq = 0
-    #Lets caluclate frequency now
+    #Lets calculate frequency now
     tp = np.unique(vals, return_counts = True)
     for tpx in range(len(tp[0])):
         if(tp[1][tpx]>1):
@@ -385,4 +454,3 @@ def ts_sel_date(df, meta = None, sttime = None, entime = None, delta = None):
             if dt.days >= delta:
                 sel += [ts]
     return sel
-            
