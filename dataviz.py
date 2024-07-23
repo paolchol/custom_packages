@@ -12,10 +12,23 @@ import pandas as pd
 import plotly.express as px
 from plotly.offline import plot
 
-# %% Set plot resolution
+# %% Utilities
 
 def set_res(res):
+    """
+    Set plot resolution
+    """
     matplotlib.rcParams['figure.dpi'] = res
+
+def cm2inch(*tupl):
+    """
+    Transforms centrimeters to inches
+    """
+    inch = 2.54
+    if isinstance(tupl[0], tuple):
+        return tuple(i/inch for i in tupl[0])
+    else:
+        return tuple(i/inch for i in tupl)
 
 # %% General plot
 
