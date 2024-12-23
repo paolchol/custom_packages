@@ -46,6 +46,31 @@ def fast_TS_visualization(df):
 def interactive_TS_visualization(df, xlab = 'X', ylab = 'Y', file = 'temp.html',
                                  plottype = 'line', legend_title = "Variables",
                                  markers = False, ret = False, **kwargs):
+    """
+    Function to interactively plot a pandas.DataFrame
+    Needs plotly and plotly.express
+
+    df: pandas.DataFrame
+        The DataFrame to plot
+    xlab, ylab: string, optional
+        The x and y axes labels. Default is X, Y
+    file: string, optional
+        The name of the output .html file containing the plot.
+        Default is temp.html
+    plottype: string, optional
+        If == line, plots a line plot, otherwise a scatterplot.
+        Default is line
+    markers: bool, optional
+        If True, plots markers in the line plot. Default is False
+    ret: bool, optional
+        If True, returns a plotly.express.line/scatter and doesn't save a .html file.
+        Default is False
+    kwargs: dictionary
+        Additional parameters to be passed to plotly.express.line/scatter.update_layout
+
+    Returns
+    none or plotly.express.line/scatter
+    """
     if plottype == 'line':
         figure = px.line(df, markers = markers)
     else:
