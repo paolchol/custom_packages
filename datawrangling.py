@@ -8,6 +8,7 @@ Some functionalities:
 @author: paolo
 """
 
+import os
 import numpy as np
 import pandas as pd
 
@@ -576,3 +577,17 @@ class DBU():
     def merge_ts(self):
         pass
 
+def rename_multiple_files(files, change, to):
+    """
+    Renames the files provided
+
+    files: list of str
+    change: str
+        Part of the file name to be changed
+    to: str
+        String to substitute to change in the file name
+    """
+    for file in files:
+        ext = file.split('.')[1]
+        out = file.replace(change, to)
+        os.rename(file, f'{out}.{ext}')
