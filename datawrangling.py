@@ -589,5 +589,5 @@ def rename_multiple_files(files, change, to):
     """
     for file in files:
         ext = file.split('.')[1]
-        out = file.replace(change, to)
+        out = file.split('.')[0].replace(change, to)
         os.rename(file, f'{out}.{ext}')
