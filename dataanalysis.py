@@ -404,6 +404,44 @@ def correct_quota(meta, ts, metacorr, codes, quotacols, printval = False):
                 print('metacorr: ' + str(metacorr.loc[code, quotacols[1]]))
     return tscorr
 
+# %% Data operations
+
+def operation_xperiods(df, col, xperiods, function = sum,
+                       includep = True):
+    """
+    Perform an operation on a variable over a specified number of periods
+    The default operation is the sum
+
+    df: pandas.DataFrame
+        the dataframe for which to compute the sum of x periods
+    col: 
+        the df column from which to extract the variable to sum
+    xperiods: int
+        the number of periods to sum, *including* the period at the line where it will be computed.
+        to avoid this, set "includep" as False
+    function: function, optional
+        Default: sum function
+    includep: bool, optional
+        Default: True
+
+    Returns:
+    sumx: list
+        List of float or int containing the sum over the x periods
+    """
+    sumx = []
+    if includep:
+        xperiods = xperiods - 1
+    df_copy = df.reset_index().copy()
+    for row in df_copy.iterrows():
+        if row[0] > xperiods:
+            if includep:
+                sumx.append(function(df_copy[col][row[0]-xperiods:row[0]+1]))
+            else:
+                sumx.append(function(df_copy[col][row[0]-xperiods:row[0]]))
+        else:
+            sumx.append(np.nan)
+    return sumx
+
 # %% General operations
 
 def print_row(df, row, cond = True):

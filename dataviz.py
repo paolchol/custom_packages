@@ -86,6 +86,35 @@ def interactive_TS_visualization(df, xlab = 'X', ylab = 'Y', file = 'temp.html',
     else:
         plot(figure, filename = file)
 
+def annotated_heatmap(data, cbar_label = 'value', x_labels = None, y_labels = None,
+                      textcolor = 'w', **kwargs):
+    if x_labels is None:
+        x_labels = data.columns
+    if y_labels is None:
+        y_labels = data.index
+
+    fig, ax = plt.subplots(1,1, figsize = (10,10))
+
+    # Create image
+    im = ax.imshow(data, **kwargs)
+
+    # Create colorbar
+    cbar = ax.figure.colorbar(im, ax = ax)
+    cbar.ax.set_ylabel(cbar_label, rotation=-90, va = "bottom")
+
+    # Show all ticks and label them with the respective list entries
+    ax.set_xticks(range(len(x_labels)), labels=x_labels,
+                  rotation=45, ha="right", rotation_mode="anchor")
+    ax.set_yticks(range(len(y_labels)), labels=y_labels)
+
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(y_labels)):
+        for j in range(len(x_labels)):
+            text = ax.text(j, i, round(data.iloc[i, j],2),
+                        ha="center", va="center", color=textcolor)
+    
+    return fig, ax
+
 # %% Plot SGI
 
 def plot_SGI(series, figsize = (6.4, 3.6), dpi = 500, dropna = True):    
