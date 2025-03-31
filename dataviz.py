@@ -35,13 +35,29 @@ def cm2inch(*tupl):
 def fast_boxplot(df):
     df.boxplot()
 
-def fast_TS_visualization(df):
-    plt.figure()
-    for i, column in enumerate(df.columns, start = 1):
-        plt.subplot(len(df.columns), 1, i)
-        plt.plot(df.index, df[column].values)
-        plt.title(column, y = 0.5, loc = 'right')
-    plt.show()
+def fast_TS_visualization(df, bbox_to_anchor = (1.15, 0.85), cmap = 'viridis',
+                          ret = False, **kwargs):
+    cmap = matplotlib.colormaps[cmap]
+    colors = cmap(np.linspace(0, 1, len(df.columns)))
+
+    # handles, labels = [], []
+    fig, axes = plt.subplots(len(df.columns), 1, **kwargs)
+    for i, column in enumerate(df.columns, start = 0):
+        # plt.subplot(len(df.columns), 1, i)
+        axes[i].plot(df.index, df[column].values, color = colors[i], label = column)
+        axes[i].set_xlim(df.index[0], df.index[-1])
+        if i < len(df.columns)-1:
+            axes[i].set_xticklabels('')
+        h, l = axes[i].get_legend_handles_labels()
+    #     handles.append(h)
+    #     labels.append(l)
+    # fig.legend(handles, labels, bbox_to_anchor = bbox_to_anchor)
+    plt.figlegend(bbox_to_anchor = bbox_to_anchor)
+    
+    if ret:
+        return fig, axes
+    else:
+        plt.show()
 
 def interactive_TS_visualization(df, xlab = 'X', ylab = 'Y', file = 'temp.html',
                                  plottype = 'line', legend_title = "Variables",
@@ -93,7 +109,7 @@ def annotated_heatmap(data, cbar_label = 'value', x_labels = None, y_labels = No
     if y_labels is None:
         y_labels = data.index
 
-    fig, ax = plt.subplots(1,1, figsize = (10,10))
+    fig, ax = plt.subplots(1,1, figsize = (10,10), dpi = 300)
 
     # Create image
     im = ax.imshow(data, **kwargs)
