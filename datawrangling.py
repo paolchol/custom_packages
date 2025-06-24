@@ -591,3 +591,17 @@ def rename_multiple_files(files, change, to):
         ext = file.split('.')[1]
         out = file.split('.')[0].replace(change, to)
         os.rename(file, f'{out}.{ext}')
+
+#%% Operations on already set datasets
+
+def resample_stacked_df(df, date_col, val_col, id_col, res = '1MS', op = 'mean'):
+    out = df.pivot_table(index = date_col, values = val_col, columns=id_col).copy()
+    if op == 'mean':
+        out = out.resample(res).mean()
+    elif op == 'sum':
+        out = out.resample(res).sum()
+    else:
+        print('method not implemented')
+        return
+    out = out.reset_index(level=date_col).melt(id_vars=date_col)
+    return out
