@@ -44,7 +44,7 @@ class CheckOutliers():
 
     """
 
-    def __init__(self, df, printinfo = True, inplace = False, saveoutliers = False):
+    def __init__(self, df, printinfo = True, inplace = False, saveoutliers = False, method = 'IQR'):
         """
         df: pandas.DataFrame
             DataFrame containing time series as columns
@@ -59,10 +59,10 @@ class CheckOutliers():
             self.df = df
         else:
             self.df = df.copy()
-        self.count(printinfo, saveoutliers)
+        self.count(printinfo, saveoutliers, method)
         self.df_plot = self.df.copy()
     
-    def count(self, printinfo, saveoutliers):
+    def count(self, printinfo, saveoutliers, method):
         """
         Counts the number of outliers
 
@@ -75,6 +75,11 @@ class CheckOutliers():
         saveoutliers: bool
             If True, will save the position of outliers in the df.
             __init__ will set this to False as default.
+        method: str
+            Options: IQR, 3std
+            If IQR, it will identify outliers as values above/below 1.5*IQR
+            If 3std, it will identify outliers as values above/below 3*std
+            __init__ will set this to IQR as default.
         
         Generates:
         self.output: pandas.DataFrame
@@ -90,11 +95,18 @@ class CheckOutliers():
         self.output = pd.DataFrame()
         for column in df.columns:
             if not df[column].isnull().all():
-                Q1 = np.nanpercentile(df[column], 25)
-                Q3 = np.nanpercentile(df[column], 75)
-                IQR = Q3 - Q1
-                upper_limit = Q3 + 1.5*IQR
-                lower_limit = Q1 - 1.5*IQR
+                if method == 'IQR':
+                    Q1 = np.nanpercentile(df[column], 25)
+                    Q3 = np.nanpercentile(df[column], 75)
+                    IQR = Q3 - Q1
+                    upper_limit = Q3 + 1.5*IQR
+                    lower_limit = Q1 - 1.5*IQR
+                elif method == '3std':
+                    std = np.nanstd(df[column])
+                    upper_limit = 3*std
+                    lower_limit = -3*std
+                else:
+                    print('Invalid method chosen. Available methods are: IQR, 3std')
 
                 self.output = pd.concat([self.output,
                                         pd.DataFrame([column,
@@ -171,7 +183,7 @@ class CheckOutliers():
             If True, returns fig, ax for further customization
         """
         if column in [*self.outliers]:
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(figsize = (10,5))
             ax.plot(self.df_plot.loc[:, column], marker = '.', color = '#3782BD',
                     label = column, linestyle = '-', alpha = 0.5)
             ax.plot(self.df_plot.loc[self.outliers[column], column], marker = 'o',
@@ -207,10 +219,11 @@ class CheckOutliers():
 
 class CheckNA():
     
-    def __init__(self, df):
-        self.df = df
+    def __init__(self, df, threshold = 10, printinfo = True):
+        self.df = df.copy()
+        self.check(threshold, printinfo)
         
-    def check(self, threshold = 10, printinfo = True):
+    def check(self, threshold, printinfo):
         count = 0
         self.output = pd.DataFrame(np.zeros((len(self.df.columns), 2)), columns = ['ID', 'perc_NA'])
         fvi = self.df.apply(pd.Series.first_valid_index, axis = 0)
@@ -241,6 +254,56 @@ class CheckNA():
             else:
                 NAs.iloc[i,1] = False
         return self.filtered, NAs
+    
+    def fill_NA(self, method = 'ffill', subset = None,
+                get_first_valid_index = False, **kwargs):
+        '''
+        Fills the NA in the dataframe
+
+        method: str, optional
+            Available options: ffill, bfill, interpolate, else
+            If else, you can specify additional
+            parameters to pandas.DataFrame.fillna() through kwargs
+            Default is ffill
+        subset: str, list of str, optional
+            A single label or multiple labels from df columns to which
+            to perform the filling
+        get_first_valid_index: bool, optional
+            If True, the values before the first valid index in the original
+            df are set to nan also in the resulting df
+            Default is False
+        kwargs: dict, optional
+            Parameters to pandas.DataFrame.fillna()
+            To provide a filling through a mooving average, provide the following:
+            value = df.rolling(4, 1).mean()
+            (check https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.rolling.html)
+            You may want to then interpolate the results using:
+            df.interpolate(method = 'linear')
+
+        Returns
+        out: pandas.DataFrame
+            df filled. Subset of original df if subset is provided
+        '''
+        if subset is not None:
+            out = self.df.loc[:, subset].copy()
+        else:
+            out = self.df.copy()
+        if method == 'ffill':
+            out = out.ffill()
+        elif method == 'bfill':
+            out = out.bfill()
+        else:
+            out = out.fillna(**kwargs)
+        
+        if get_first_valid_index:
+            cols = self.df.columns if subset is None else subset
+            for col in cols:
+                fvd = self.df[col].first_valid_index()
+                out.loc[:fvd, col] = np.nan
+
+        return out
+
+
 
 # %% Mann-Kendall test and Sen's slope estimation
 
