@@ -155,6 +155,12 @@ class CheckOutliers():
         ret: bool, optional
             If True, it will return CheckOutliers.df with the outliers removed by this module.
             Default is False.
+        idxintervals: dict, optional
+            Index intervals where to remove outliers
+            Dictionary structured in this way:
+            {column_label: (index start position, index end position)}
+            Example: {'id_1': (Timestamp('2010-01-01 00:00:00'), Timestamp('2025-05-01 00:00:00'))}
+            Default is None
         
         Returns:
         output: pandas.DataFrame
