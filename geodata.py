@@ -159,11 +159,14 @@ def find_nearestrastercell(raster, point):
 
 def find_nearestpoint(df1, df2, id1 = 'CODE', coord1 = ['lon', 'lat'],
                        id2 = 'CODE', coord2 = ['lon', 'lat'],
-                       reset_index = False, change_CRS = False, ellps = 'WGS84',
+                       reset_index = False, change_CRS = False, overwrite = False, ellps = 'WGS84',
                        **kwargs):
     """
     Obtains the nearest point from df2 relative to each point in df1. Returns
     a dataframe gathering this information
+    !!!
+    For this to work, the coordinates have to be ellipsoidical (e.g. EPSG:4326)
+    !!!
 
     Parameters
     ----------
@@ -185,8 +188,11 @@ def find_nearestpoint(df1, df2, id1 = 'CODE', coord1 = ['lon', 'lat'],
         the original df. The default is False.
     change_CRS : bool, optional
         True: changes the CRS of the coordinates. Needs also informations
-        about the CRS transformation, to be provided as **kwargs.
+        about the CRS transformation (parameters to transf_CRS), to be provided as **kwargs.
         The default is False.
+    overwrite: bool, optional
+        If False, the new coordinates are not pasted in the original df
+        Default is False
     ellps : str, optional
         Ellipsoid definition to be passed to pyproj.Geod. The default is 'WGS84'.
     **kwargs : TYPE
@@ -203,16 +209,19 @@ def find_nearestpoint(df1, df2, id1 = 'CODE', coord1 = ['lon', 'lat'],
         df1 = df1.copy().reset_index()
         df2 = df2.copy().reset_index()
     if change_CRS:
-        out = transf_CRS(df1.loc[:, coord1[0]], df1.loc[:, coord1[1]], series = True, **kwargs)
+        if not overwrite:
+            df1 = df1.copy()
+            df2 = df2.copy()
+        out = transf_CRS(df1.loc[:, coord1[0]], df1.loc[:, coord1[1]], series = False, **kwargs)
         df1.loc[:, coord1[0]], df1.loc[:, coord1[1]] = out[1], out[0]
-        out = transf_CRS(df2.loc[:, coord2[0]], df2.loc[:, coord2[0]], series = True, **kwargs)
+        out = transf_CRS(df2.loc[:, coord2[0]], df2.loc[:, coord2[0]], series = False, **kwargs)
         df2.loc[:, coord2[0]], df2.loc[:, coord2[1]] = out[1], out[0]
     
     dbout = df1.loc[:, [id1, coord1[0], coord1[1]]].copy()
     nrstcol = [f'{id2}_nrst', f'{coord2[0]}_nrst', f'{coord2[1]}_nrst']
     dbout[nrstcol[0]], dbout[nrstcol[1]], dbout[nrstcol[2]] = [np.nan, np.nan, np.nan]
     dbout['dist'] = np.nan
-    geod = pyproj.Geod(ellps = ellps)#, **kwargs)
+    geod = pyproj.Geod(ellps = ellps)
     
     for p in df1.loc[:, [id1, coord1[0], coord1[1]]].iterrows():
         dist = []
