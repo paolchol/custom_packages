@@ -599,7 +599,7 @@ def resample_stacked_df(df, date_col, val_col, id_col, res = '1MS', op = 'mean')
     if op == 'mean':
         out = out.resample(res).mean()
     elif op == 'sum':
-        out = out.resample(res).sum()
+        out = out.resample(res).apply(lambda x: x.values.sum()) # this way the nans are not kept in the resulting df
     else:
         print('method not implemented')
         return
