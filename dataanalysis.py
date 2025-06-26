@@ -107,6 +107,7 @@ class CheckOutliers():
                     lower_limit = -3*std
                 else:
                     print('Invalid method chosen. Available methods are: IQR, 3std')
+                    return
 
                 self.output = pd.concat([self.output,
                                         pd.DataFrame([column,
@@ -128,12 +129,17 @@ class CheckOutliers():
         self.output.columns = ['ID', 'n_outlier', 'n_outlier_up', 'n_outlier_lw', 'perc_outlier']
         self.output.reset_index(inplace=True, drop=True)
     
-    def remove(self, fill = np.nan, skip = [], upperonly = False, loweronly = False,
-               keepchanges = False, ret = False):
+    def remove(self, method = 'IQR', fill = np.nan, skip = [], upperonly = False, loweronly = False,
+               keepchanges = False, ret = False, idxintervals = None):
         """
         Remove the outliers present in the df provided
 
-        fill: optional
+        method: str, optional
+            Options: IQR, 3std
+            If IQR, it will identify outliers as values above/below 1.5*IQR
+            If 3std, it will identify outliers as values above/below 3*std
+            Default is IQR
+        fill: inst, float, str, optional
             The value with which to fill in inplace of the outliers. Default is numpy.nan
         skip: str, list of str
             Labels of columns to skip in the outlier removal
@@ -161,13 +167,24 @@ class CheckOutliers():
             output = self.df.copy()
         for column in self.df.columns:
             if column not in skip:
-                Q1 = np.nanpercentile(self.df[column], 25)
-                Q3 = np.nanpercentile(self.df[column], 75)
-                IQR = Q3 - Q1
-                upper_limit = Q3 + 1.5*IQR
-                lower_limit = Q1 - 1.5*IQR
-                if not upperonly: output.loc[self.df[column] < lower_limit, column] = fill
-                if not loweronly: output.loc[self.df[column] > upper_limit, column] = fill
+                if method == 'IQR':
+                    Q1 = np.nanpercentile(output[column], 25)
+                    Q3 = np.nanpercentile(output[column], 75)
+                    IQR = Q3 - Q1
+                    upper_limit = Q3 + 1.5*IQR
+                    lower_limit = Q1 - 1.5*IQR
+                elif method == '3std':
+                    std = np.nanstd(output[column])
+                    upper_limit = 3*std
+                    lower_limit = -3*std
+                else:
+                    print('Invalid method chosen. Available methods are: IQR, 3std')
+                if idxintervals is not None and column in idxintervals.keys():
+                    if not upperonly: output.loc[(self.df[column] < lower_limit) & (self.df.index > idxintervals[column][0]) & (self.df.index < idxintervals[column][1]), column] = fill
+                    if not loweronly: output.loc[(self.df[column] > upper_limit) & (self.df.index > idxintervals[column][0]) & (self.df.index < idxintervals[column][1]), column] = fill
+                else:
+                    if not upperonly: output.loc[self.df[column] < lower_limit, column] = fill
+                    if not loweronly: output.loc[self.df[column] > upper_limit, column] = fill
         if ret:
             return output
         elif not keepchanges:
