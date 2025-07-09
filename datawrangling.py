@@ -605,3 +605,9 @@ def resample_stacked_df(df, date_col, val_col, id_col, res = '1MS', op = 'mean')
         return
     out = out.reset_index(level=date_col).melt(id_vars=date_col)
     return out
+
+def compute_first_valid_index(df):
+    out = {}
+    for col in df.columns:
+        out[col] = df[col].first_valid_index()
+    out = pd.DataFrame(out, columns=['label', 'fvi'])
