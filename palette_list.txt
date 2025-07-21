@@ -1,0 +1,5 @@
+# Nice palettes I used/may use from pypalettes
+# chosen from: https://python-graph-gallery.com/color-palette-finder/
+
+X39
+TealRose
