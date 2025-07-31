@@ -600,10 +600,14 @@ def resample_stacked_df(df, date_col, val_col, id_col, res = '1MS', op = 'mean')
         out = out.resample(res).mean()
     elif op == 'sum':
         out = out.resample(res).apply(lambda x: x.values.sum()) # this way the nans are not kept in the resulting df
+    elif op == 'max':
+        out = out.resample(res).max()
+    elif op == 'min':
+        out = out.resample(res).min()
     else:
         print('method not implemented')
         return
-    out = out.reset_index(level=date_col).melt(id_vars=date_col)
+    out = out.reset_index(level=date_col).melt(id_vars=date_col, var_name=id_col, value_name=val_col)
     return out
 
 def compute_first_valid_index(df):
