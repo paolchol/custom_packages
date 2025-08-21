@@ -244,3 +244,22 @@ def find_nearestpoint(df1, df2, id1 = 'CODE', coord1 = ['lon', 'lat'],
     #     dbout.drop(dbout.loc[dbout['CODICE'].isin(drop),:].index, inplace = True)
     
     return dbout
+
+def count_in_radius(a_tuples, b, r):
+    """
+    Counts the number of points a in a radius from point b
+    Set up thanks to this response: https://stackoverflow.com/a/74431921/31323720
+
+    a_tuples: list of tuples
+        List of tuples containing the coordinates of the points to search
+    b: tuple
+        Tuple containing the coordinates of the point at the center of the radius
+    r: int or float
+        Radius of search
+    """
+    r_squared = r*r
+    a_arrs = (np.array([v[0] for v in a_tuples]), np.array([v[1] for v in a_tuples]))
+    x, y = a_arrs
+    dx = x - b[0]
+    dy = y - b[1]
+    return len(np.nonzero(((dx * dx) + (dy * dy)) <= r_squared)[0])
