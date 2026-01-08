@@ -29,6 +29,16 @@ def cm2inch(*tupl):
         return tuple(i/inch for i in tupl[0])
     else:
         return tuple(i/inch for i in tupl)
+    
+def rgb2hex(tup):
+    """
+    tup: tuple, list or array of int, float or str
+        (r, g, b)
+    """
+    r = int(tup[0])
+    g = int(tup[1])
+    b = int(tup[2])
+    return "#{:02x}{:02x}{:02x}".format(r,g,b)
 
 # %% General plot
 
