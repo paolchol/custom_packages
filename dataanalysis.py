@@ -330,7 +330,7 @@ class CheckNA():
 
 # %% Mann-Kendall test and Sen's slope estimation
 
-def mann_kendall(vals, confidence = 0.95):
+def mann_kendall(vals, confidence = 0.95, only_t = False):
     #source: https://github.com/manaruchi/MannKendall_Sen_Rainfall
     
     n = len(vals)
@@ -378,7 +378,10 @@ def mann_kendall(vals, confidence = 0.95):
     else:
         tr_type = 0
     
-    return z, p, tr_type
+    if only_t:
+        return tr_type
+    else:
+        return z, p, tr_type
 
 def sen_slope(vals, confidence = 0.95, scipy = True):
     #source: https://github.com/manaruchi/MannKendall_Sen_Rainfall
