@@ -2,7 +2,7 @@ import flopy
 import numpy as np
 import pandas as pd
 
-# General
+#%% General
 
 def assign_date_to_sp(nsp, start, freq, add_my = False, base = 0):
     sps = {
@@ -15,7 +15,7 @@ def assign_date_to_sp(nsp, start, freq, add_my = False, base = 0):
         sps['year'] = [d.year for d in sps.month_start]
     return sps
 
-# For MODFLOW-USG
+#%% For MODFLOW-USG
 
 ## .hds processing
 
