@@ -6,6 +6,7 @@ author: paolo
 """
 
 import matplotlib
+import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -140,6 +141,25 @@ def annotated_heatmap(data, cbar_label = 'value', x_labels = None, y_labels = No
                         ha="center", va="center", color=textcolor)
     
     return fig, ax
+
+# %% Video
+
+def video_map(array3d, s = None, e = None, fig = None, ax = None):
+    if fig is None:
+        fig, ax = plt.subplots()
+    s = 0 if s is None else s
+    e = array3d.shape[0] if e is None else e
+    ims = []
+    for i in range(s, e):
+        if i != 0:
+            im = ax.imshow(array3d[i,:,:], animated = True,
+                           vmin=array3d.min(), vmax=array3d.max())
+        else:
+            im = ax.imshow(array3d[i,:,:],
+                           vmin=array3d.min(), vmax=array3d.max())
+        ims.append([im])
+    ani = animation.ArtistAnimation(fig, ims)
+    return fig, ax, ani
 
 # %% Plot SGI
 
