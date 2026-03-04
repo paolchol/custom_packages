@@ -5,6 +5,7 @@ Collection of functions which operate with spatial/georeferenced data
 @author: paolo
 """
 
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ import plotly.express as px
 from plotly.offline import plot
 import pyproj
 import rasterio
+from shapely.geometry import Point
 
 # %% Visualization
 
@@ -263,3 +265,19 @@ def count_in_radius(a_tuples, b, r):
     dx = x - b[0]
     dy = y - b[1]
     return len(np.nonzero(((dx * dx) + (dy * dy)) <= r_squared)[0])
+
+def select_in_area(area, points, crs = 'EPSG:32632'):
+    # generate point df from coordinates
+    geom = [Point(x,y) for x,y in zip(points.x, points.y)]
+    geodf = gpd.GeoDataFrame(points, geometry = geom)
+    geodf.set_crs(crs=crs, inplace = True);
+
+    # generate a tool list by repeating the area
+    lst = []
+    for i in range(geodf.shape[0]):
+        lst += [area.geometry.values]
+    tool = gpd.GeoDataFrame(lst, columns=['geometry'], crs = 'EPSG:32632')
+
+    # obtain labels of the points falling into the area
+    sel = geodf.loc[geodf.geometry.within(tool.geometry, align=False), 'id'].values
+    return sel
