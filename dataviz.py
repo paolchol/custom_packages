@@ -7,6 +7,7 @@ author: paolo
 
 import matplotlib
 import matplotlib.animation as animation
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -40,6 +41,13 @@ def rgb2hex(tup):
     g = int(tup[1])
     b = int(tup[2])
     return "#{:02x}{:02x}{:02x}".format(r,g,b)
+
+def fmt_date(x, pos=None):
+    d = mdates.num2date(x)
+    if d.month == 1:
+        return f'Jan\n{d.year}'
+    else:
+        return d.strftime('%b')
 
 # %% General plot
 
